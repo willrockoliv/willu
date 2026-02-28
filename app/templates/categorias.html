@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Categorias - Willu{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Categorias</h1>
+        <p class="text-sm text-gray-500 mt-1">Organize suas receitas e despesas por categoria</p>
+    </div>
+
+    <!-- Formulário de nova categoria -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-3">Nova Categoria</h2>
+        <form hx-post="/categorias/" hx-target="#categorias-lista" hx-swap="innerHTML" class="flex flex-wrap items-end gap-3">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Nome</label>
+                <input type="text" name="nome" required placeholder="Ex: Alimentação, Salário..."
+                    class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
+                <select name="tipo" class="rounded-lg border-gray-300 text-sm">
+                    <option value="Despesa">💸 Despesa</option>
+                    <option value="Receita">💰 Receita</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Natureza</label>
+                <select name="natureza" class="rounded-lg border-gray-300 text-sm">
+                    <option value="Fixa">Fixa</option>
+                    <option value="Recorrente">Recorrente</option>
+                    <option value="Variável">Variável</option>
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">
+                Adicionar
+            </button>
+        </form>
+    </div>
+
+    <!-- Lista -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100" id="categorias-lista">
+        {% include "partials/categorias_lista.html" %}
+    </div>
+</div>
+{% endblock %}

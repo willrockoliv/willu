@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Virtual env
+.venv/
+venv/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Pytest
+.pytest_cache/
+
+# Alembic auto-generated (versionadas individualmente)
+alembic/versions/*.py
+!alembic/versions/.gitkeep
+
+# Docker
+/tmp/dockerd.log
+
+# OS
+.DS_Store
+Thumbs.db
+

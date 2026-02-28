@@ -1,0 +1,157 @@
+<!-- Lista de Sugestões de Conciliação -->
+{% if sugestoes %}
+<div class="space-y-3">
+    <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-800">
+            {{ sugestoes | length }} transações encontradas
+        </h3>
+        <button
+            id="btn-confirmar-todas"
+            onclick="confirmarTodas()"
+            class="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+            ✅ Confirmar Todas
+        </button>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm" id="tabela-conciliacao">
+            <thead>
+                <tr class="border-b border-gray-200">
+                    <th class="text-left py-3 px-3 font-medium text-gray-500">Data</th>
+                    <th class="text-left py-3 px-3 font-medium text-gray-500">Descrição Banco</th>
+                    <th class="text-right py-3 px-3 font-medium text-gray-500">Valor</th>
+                    <th class="text-left py-3 px-3 font-medium text-gray-500">Match</th>
+                    <th class="text-left py-3 px-3 font-medium text-gray-500">Categoria</th>
+                    <th class="text-center py-3 px-3 font-medium text-gray-500">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sugestoes %}
+                <tr class="border-b border-gray-100 hover:bg-gray-50 conciliacao-row"
+                    data-data="{{ s.linha_extrato.data }}"
+                    data-descricao-banco="{{ s.linha_extrato.descricao }}"
+                    data-valor="{{ s.linha_extrato.valor }}"
+                    data-transacao-id="{{ s.transacao_id or '' }}"
+                    data-conta-id="{{ conta_id }}"
+                >
+                    <td class="py-3 px-3 text-gray-600">
+                        {{ s.linha_extrato.data.strftime('%d/%m/%Y') if s.linha_extrato.data is not string else s.linha_extrato.data }}
+                    </td>
+                    <td class="py-3 px-3">
+                        <div class="font-medium text-gray-800 max-w-xs truncate">{{ s.linha_extrato.descricao }}</div>
+                        {% if s.transacao_descricao %}
+                        <div class="text-xs text-primary-600 mt-0.5">→ {{ s.transacao_descricao }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-3 text-right font-medium
+                        {% if s.linha_extrato.valor >= 0 %}text-accent-600{% else %}text-red-600{% endif %}">
+                        R$ {{ "%.2f" | format(s.linha_extrato.valor | abs) }}
+                    </td>
+                    <td class="py-3 px-3">
+                        {% if s.origem == 'dicionario' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                🎯 Dicionário ({{ s.score }}%)
+                            </span>
+                        {% elif s.origem == 'fuzzy' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                🔍 Fuzzy ({{ s.score }}%)
+                            </span>
+                        {% elif s.origem == 'palavras_chave' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                                📝 Palavras-chave ({{ s.score }}%)
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                ❓ Nova
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-3">
+                        <select class="categoria-select rounded border-gray-300 text-xs py-1 px-2 w-36"
+                            data-row-idx="{{ loop.index0 }}">
+                            <option value="">Sem categoria</option>
+                            {% for cat in categorias %}
+                            <option value="{{ cat.id }}" {% if cat.id == s.categoria_id %}selected{% endif %}>
+                                {{ cat.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                        <form
+                            hx-post="/importacao/confirmar"
+                            hx-target="closest tr"
+                            hx-swap="outerHTML"
+                            class="inline"
+                        >
+                            <input type="hidden" name="data" value="{{ s.linha_extrato.data }}">
+                            <input type="hidden" name="descricao_banco" value="{{ s.linha_extrato.descricao }}">
+                            <input type="hidden" name="valor" value="{{ s.linha_extrato.valor }}">
+                            <input type="hidden" name="transacao_id" value="{{ s.transacao_id or '' }}">
+                            <input type="hidden" name="categoria_id" value="{{ s.categoria_id or '' }}" class="cat-hidden">
+                            <input type="hidden" name="descricao" value="{{ s.transacao_descricao or s.linha_extrato.descricao }}">
+                            <input type="hidden" name="conta_id" value="{{ conta_id }}">
+                            <input type="hidden" name="salvar_dicionario" value="on">
+                            <button type="submit"
+                                class="px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs rounded-lg transition-colors">
+                                ✓ Confirmar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Atualizar hidden do categoria_id ao mudar o select
+document.querySelectorAll('.categoria-select').forEach(sel => {
+    sel.addEventListener('change', function() {
+        const row = this.closest('tr');
+        const hidden = row.querySelector('.cat-hidden');
+        if (hidden) hidden.value = this.value;
+    });
+});
+
+function confirmarTodas() {
+    const rows = document.querySelectorAll('.conciliacao-row');
+    const dados = [];
+    rows.forEach(row => {
+        const catSelect = row.querySelector('.categoria-select');
+        dados.push({
+            data: row.dataset.data,
+            descricao_banco: row.dataset.descricaoBanco,
+            valor: row.dataset.valor,
+            transacao_id: row.dataset.transacaoId || null,
+            categoria_id: catSelect ? catSelect.value : null,
+            descricao: row.dataset.descricaoBanco,
+            conta_id: row.dataset.contaId,
+        });
+    });
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/importacao/confirmar-todas';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'dados';
+    input.value = JSON.stringify(dados);
+    form.appendChild(input);
+
+    // Usar HTMX
+    htmx.ajax('POST', '/importacao/confirmar-todas', {
+        values: { dados: JSON.stringify(dados) },
+        target: '#tabela-conciliacao',
+        swap: 'outerHTML'
+    });
+}
+</script>
+
+{% else %}
+<div class="text-center py-8 text-gray-400">
+    <p class="text-sm">Nenhuma transação encontrada no extrato.</p>
+</div>
+{% endif %}

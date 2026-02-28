@@ -1,0 +1,30 @@
+<!-- Lista de Contas Partial -->
+{% if contas %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for conta in contas %}
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-800">{{ conta.nome }}</h3>
+            <button
+                hx-delete="/contas/{{ conta.id }}"
+                hx-target="#contas-lista"
+                hx-confirm="Tem certeza que deseja excluir '{{ conta.nome }}'?"
+                class="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+            </button>
+        </div>
+        <p class="text-sm text-gray-500">Saldo inicial:</p>
+        <p class="text-lg font-bold {% if conta.saldo_inicial >= 0 %}text-accent-600{% else %}text-red-600{% endif %}">
+            R$ {{ "%.2f" | format(conta.saldo_inicial) }}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-8 text-gray-400">
+    <p class="text-sm">Nenhuma conta cadastrada.</p>
+</div>
+{% endif %}

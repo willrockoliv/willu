@@ -1,0 +1,56 @@
+<!-- Chart partial para renderização via HTMX (dados em JSON para JS) -->
+<div class="h-80">
+    <canvas id="grafico-projecao-partial"></canvas>
+</div>
+<script>
+(function() {
+    const dados = {{ projecao | tojson }};
+    const hoje = '{{ hoje.isoformat() }}';
+    const labels = dados.map(d => d.data);
+    const dadosPassado = dados.map(d => d.tipo === 'real' ? d.saldo : null);
+    const dadosFuturo = dados.map(d => d.tipo === 'projetado' ? d.saldo : null);
+    const idxHoje = labels.indexOf(hoje);
+    if (idxHoje >= 0) dadosFuturo[idxHoje] = dados[idxHoje].saldo;
+
+    const ctx = document.getElementById('grafico-projecao-partial').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Saldo Real',
+                    data: dadosPassado,
+                    borderColor: '#0ea5e9',
+                    backgroundColor: 'rgba(14,165,233,0.1)',
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    spanGaps: false,
+                },
+                {
+                    label: 'Saldo Projetado',
+                    data: dadosFuturo,
+                    borderColor: '#0ea5e9',
+                    backgroundColor: 'rgba(14,165,233,0.05)',
+                    borderWidth: 2,
+                    borderDash: [6,4],
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    spanGaps: false,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, grid: { display: false } },
+                y: { ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') } }
+            }
+        }
+    });
+})();
+</script>

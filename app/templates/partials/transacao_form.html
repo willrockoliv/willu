@@ -1,0 +1,111 @@
+<!-- Formulário de Transação (Modal) -->
+<form
+    {% if transacao %}
+        hx-put="/transacoes/{{ transacao.id }}"
+    {% else %}
+        hx-post="/transacoes/"
+    {% endif %}
+    hx-target="#modal-transacao-body"
+    hx-swap="innerHTML"
+    class="space-y-4"
+>
+    <!-- Tipo: Receita ou Despesa -->
+    <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+        <label class="flex-1 cursor-pointer">
+            <input type="radio" name="tipo_valor" value="despesa" class="peer hidden"
+                {% if not transacao or (transacao and transacao.valor_previsto < 0) %}checked{% endif %}>
+            <div class="peer-checked:bg-red-50 peer-checked:text-red-700 peer-checked:border-red-300 text-center py-2.5 text-sm font-medium text-gray-600 border-r border-gray-200 hover:bg-gray-50 transition-colors">
+                💸 Despesa
+            </div>
+        </label>
+        <label class="flex-1 cursor-pointer">
+            <input type="radio" name="tipo_valor" value="receita" class="peer hidden"
+                {% if transacao and transacao.valor_previsto > 0 %}checked{% endif %}>
+            <div class="peer-checked:bg-green-50 peer-checked:text-green-700 peer-checked:border-green-300 text-center py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                💰 Receita
+            </div>
+        </label>
+    </div>
+
+    <!-- Descrição -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+        <input type="text" name="descricao" required
+            value="{{ transacao.descricao if transacao else '' }}"
+            placeholder="Ex: Aluguel, Salário, Supermercado..."
+            class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
+    </div>
+
+    <!-- Valor -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
+        <input type="number" name="valor_previsto" step="0.01" min="0" required
+            value="{{ '%.2f' | format(transacao.valor_previsto | abs) if transacao else '' }}"
+            placeholder="0,00"
+            class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
+    </div>
+
+    <!-- Data de Vencimento -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Data de Vencimento</label>
+        <input type="date" name="data_vencimento" required
+            value="{{ transacao.data_vencimento.isoformat() if transacao else '' }}"
+            class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
+    </div>
+
+    <!-- Conta -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Conta</label>
+        <select name="conta_id" required
+            class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
+            <option value="">Selecione...</option>
+            {% for conta in contas %}
+            <option value="{{ conta.id }}" {% if transacao and transacao.conta_id == conta.id %}selected{% endif %}>
+                {{ conta.nome }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Categoria -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+        <select name="categoria_id"
+            class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
+            <option value="">Sem categoria</option>
+            {% for cat in categorias %}
+            <option value="{{ cat.id }}" {% if transacao and transacao.categoria_id == cat.id %}selected{% endif %}>
+                {{ cat.nome }} ({{ cat.natureza.value }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Status -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <select name="status"
+            class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
+            <option value="Projetada" {% if not transacao or transacao.status.value == 'Projetada' %}selected{% endif %}>
+                📋 Projetada
+            </option>
+            <option value="Executada" {% if transacao and transacao.status.value == 'Executada' %}selected{% endif %}>
+                ✅ Executada
+            </option>
+        </select>
+    </div>
+
+    <!-- Data de Pagamento (opcional) -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Data de Pagamento (opcional)</label>
+        <input type="date" name="data_pagamento"
+            value="{{ transacao.data_pagamento.isoformat() if transacao and transacao.data_pagamento else '' }}"
+            class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
+    </div>
+
+    <!-- Botão -->
+    <button type="submit"
+        class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 rounded-lg transition-colors text-sm">
+        {% if transacao %}Atualizar{% else %}Cadastrar{% endif %} Transação
+    </button>
+</form>

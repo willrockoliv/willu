@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+*.pyo
+.venv
+.env
+.git
+.gitignore
+.pytest_cache
+.prompts
+*.md
+!requirements.txt
+tests/
+alembic/versions/*.py

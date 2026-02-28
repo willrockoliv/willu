@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Importar Extrato - Willu{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Importar Extrato</h1>
+        <p class="text-sm text-gray-500 mt-1">Faça upload de arquivos OFX ou CSV para conciliação inteligente</p>
+    </div>
+
+    <!-- Upload -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <form
+            hx-post="/importacao/upload"
+            hx-target="#resultado-importacao"
+            hx-swap="innerHTML"
+            hx-encoding="multipart/form-data"
+            hx-indicator="#loading-indicator"
+            class="space-y-4"
+        >
+            <div class="flex flex-wrap items-end gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Conta</label>
+                    <select name="conta_id" required class="rounded-lg border-gray-300 text-sm">
+                        {% for conta in contas %}
+                        <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Arquivo (.ofx ou .csv)</label>
+                    <input type="file" name="arquivo" accept=".ofx,.csv" required
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
+                </div>
+                <button type="submit"
+                    class="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    📤 Importar
+                </button>
+            </div>
+        </form>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="htmx-indicator flex items-center gap-2 mt-4 text-primary-600">
+            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            <span class="text-sm">Processando extrato...</span>
+        </div>
+    </div>
+
+    <!-- Informações -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div class="flex gap-3">
+            <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div class="text-sm text-blue-700">
+                <p class="font-medium mb-1">Como funciona a conciliação inteligente:</p>
+                <ol class="list-decimal list-inside space-y-1 text-blue-600">
+                    <li><strong>Dicionário:</strong> Se a descrição do banco já foi mapeada antes → match automático</li>
+                    <li><strong>Fuzzy:</strong> Busca por transações projetadas com data e valor similares</li>
+                    <li><strong>Palavras-chave:</strong> Compara descrição do banco com nomes de categorias</li>
+                </ol>
+                <p class="mt-2">Cada confirmação alimenta o dicionário para futuras importações! 🧠</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultado da importação -->
+    <div id="resultado-importacao">
+        <!-- Carregado via HTMX após upload -->
+    </div>
+</div>
+{% endblock %}

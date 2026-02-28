@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Willu{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-sm text-gray-500 mt-1">Projeção do seu fluxo de caixa</p>
+        </div>
+        {% if contas %}
+        <div class="flex items-center gap-3">
+            <label class="text-sm font-medium text-gray-700">Conta:</label>
+            <select
+                id="conta-select"
+                class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                onchange="window.location.href='/?conta_id=' + this.value"
+            >
+                {% for conta in contas %}
+                <option value="{{ conta.id }}" {% if conta.id == conta_selecionada %}selected{% endif %}>
+                    {{ conta.nome }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not contas %}
+    <!-- Estado vazio -->
+    <div class="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
+        <svg class="mx-auto h-16 w-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        </svg>
+        <h3 class="mt-4 text-lg font-semibold text-gray-900">Nenhuma conta cadastrada</h3>
+        <p class="mt-2 text-gray-500">Comece cadastrando uma conta para ver sua projeção financeira.</p>
+        <a href="/contas/" class="mt-6 inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
+            Cadastrar Conta
+        </a>
+    </div>
+    {% else %}
+
+    <!-- Cards de Resumo -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Saldo Atual</p>
+                    <p class="text-2xl font-bold mt-1 {% if saldo_atual >= 0 %}text-accent-600{% else %}text-red-600{% endif %}">
+                        R$ {{ "%.2f"|format(saldo_atual) }}
+                    </p>
+                </div>
+                <div class="w-10 h-10 rounded-full {% if saldo_atual >= 0 %}bg-accent-100{% else %}bg-red-100{% endif %} flex items-center justify-center">
+                    <svg class="w-5 h-5 {% if saldo_atual >= 0 %}text-accent-600{% else %}text-red-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Previsão Fim do Mês</p>
+                    <p class="text-2xl font-bold mt-1 {% if saldo_fim_mes >= 0 %}text-primary-600{% else %}text-red-600{% endif %}">
+                        R$ {{ "%.2f"|format(saldo_fim_mes) }}
+                    </p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Dias com Saldo Negativo</p>
+                    <p class="text-2xl font-bold mt-1 {% if dias_negativos == 0 %}text-accent-600{% else %}text-red-600{% endif %}">
+                        {{ dias_negativos }}
+                    </p>
+                </div>
+                <div class="w-10 h-10 rounded-full {% if dias_negativos == 0 %}bg-accent-100{% else %}bg-red-100{% endif %} flex items-center justify-center">
+                    <svg class="w-5 h-5 {% if dias_negativos == 0 %}text-accent-600{% else %}text-red-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Projeção -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Projeção de Saldo</h2>
+        <div class="h-80">
+            <canvas id="grafico-projecao"></canvas>
+        </div>
+    </div>
+
+    <!-- Calendário Financeiro -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Calendário Financeiro</h2>
+        <div
+            id="calendario-container"
+            hx-get="/api/calendario?conta_id={{ conta_selecionada }}&ano={{ hoje.year }}&mes={{ hoje.month }}"
+            hx-trigger="load"
+            hx-swap="innerHTML"
+        >
+            <div class="flex items-center justify-center py-8">
+                <svg class="animate-spin h-8 w-8 text-primary-500" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if projecao %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dados = {{ projecao | tojson }};
+    const hoje = '{{ hoje.isoformat() }}';
+
+    // Separar dados passados e futuros
+    const labels = dados.map(d => d.data);
+    const saldos = dados.map(d => d.saldo);
+
+    const dadosPassado = dados.map(d => d.tipo === 'real' ? d.saldo : null);
+    const dadosFuturo = dados.map(d => d.tipo === 'projetado' ? d.saldo : null);
+
+    // O ponto de transição (hoje) deve aparecer em ambas as linhas
+    const idxHoje = labels.indexOf(hoje);
+    if (idxHoje >= 0 && idxHoje < dados.length) {
+        dadosFuturo[idxHoje] = dados[idxHoje].saldo;
+    }
+
+    const ctx = document.getElementById('grafico-projecao').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Saldo Real',
+                    data: dadosPassado,
+                    borderColor: '#0ea5e9',
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    spanGaps: false,
+                },
+                {
+                    label: 'Saldo Projetado',
+                    data: dadosFuturo,
+                    borderColor: '#0ea5e9',
+                    backgroundColor: 'rgba(14, 165, 233, 0.05)',
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    spanGaps: false,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: true, position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const val = ctx.parsed.y;
+                            return ctx.dataset.label + ': R$ ' + val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        },
+                        afterBody: function(items) {
+                            const idx = items[0].dataIndex;
+                            const d = dados[idx];
+                            if (d.detalhes && d.detalhes.length > 0) {
+                                let lines = ['───────────────'];
+                                d.detalhes.forEach(det => {
+                                    const sinal = det.valor >= 0 ? '+' : '';
+                                    lines.push(`${det.descricao}: ${sinal}R$ ${det.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`);
+                                });
+                                return lines;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'day', tooltipFormat: 'dd/MM/yyyy', displayFormats: { day: 'dd/MM' } },
+                    grid: { display: false },
+                    ticks: { maxTicksLimit: 15 }
+                },
+                y: {
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: {
+                        callback: function(val) {
+                            return 'R$ ' + val.toLocaleString('pt-BR', {minimumFractionDigits: 0});
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}
