@@ -14,8 +14,8 @@ class TestImportacaoCSV:
         """Deve parsear CSV com formato padrão brasileiro."""
         conteudo = (
             "Data;Descrição;Valor\n"
-            "05/03/2026;PGTO ALUGUEL;-1500,00\n"
-            "06/03/2026;PIX RECEBIDO;3000,50\n"
+            "05-03-2026;PGTO ALUGUEL;xpto;-1500,00\n"
+            "06-03-2026;PIX RECEBIDO;xpto;3000,50\n"
         ).encode("utf-8")
 
         linhas = importar_csv(conteudo)
@@ -33,7 +33,7 @@ class TestImportacaoCSV:
         """Deve lidar com pontos de milhar no valor."""
         conteudo = (
             "Data;Desc;Valor\n"
-            "10/03/2026;SALARIO;5.000,00\n"
+            "10-03-2026;SALARIO;xpto;5.000,00\n"
         ).encode("utf-8")
 
         linhas = importar_csv(conteudo)
@@ -44,9 +44,9 @@ class TestImportacaoCSV:
         """Deve pular linhas com formato inválido."""
         conteudo = (
             "Data;Desc;Valor\n"
-            "05/03/2026;ALUGUEL;-1500,00\n"
+            "05-03-2026;ALUGUEL;xpto;-1500,00\n"
             "INVALIDA;TESTE\n"
-            "06/03/2026;PIX;500,00\n"
+            "06-03-2026;PIX;xpto;500,00\n"
         ).encode("utf-8")
 
         linhas = importar_csv(conteudo)
