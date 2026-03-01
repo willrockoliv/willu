@@ -2,12 +2,13 @@ import json
 from fastapi import APIRouter, Depends, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.conta import Conta
 from app.models.categoria import Categoria
+from app.models.transacao import Transacao
 from app.services.importacao import importar_ofx, importar_csv, detectar_formato
 from app.services.conciliacao import conciliar_linha, confirmar_conciliacao
 from app.schemas.conciliacao import LinhaExtrato, ConfirmacaoConciliacao
@@ -46,6 +47,22 @@ async def upload_extrato(
     for linha in linhas:
         sugestao = await conciliar_linha(db, linha, conta_id)
         sugestoes.append(sugestao)
+
+    # Detectar duplicatas (transações já importadas com mesma data, valor e descrição_banco)
+    for sugestao in sugestoes:
+        linha = sugestao.linha_extrato
+        result_dup = await db.execute(
+            select(Transacao).where(
+                Transacao.conta_id == conta_id,
+                Transacao.data_pagamento == linha.data,
+                func.lower(func.trim(Transacao.descricao_banco)) == linha.descricao.strip().lower(),
+            )
+        )
+        existentes = result_dup.scalars().all()
+        for t in existentes:
+            if t.valor_realizado is not None and abs(float(t.valor_realizado) - linha.valor) < 0.01:
+                sugestao.duplicada = True
+                break
 
     # Buscar categorias para o select
     result = await db.execute(select(Categoria).order_by(Categoria.nome))

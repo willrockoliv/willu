@@ -28,7 +28,7 @@
             </thead>
             <tbody>
                 {% for s in sugestoes %}
-                <tr class="border-b border-gray-100 hover:bg-gray-50 conciliacao-row"
+                <tr class="border-b border-gray-100 hover:bg-gray-50 conciliacao-row {% if s.duplicada %}bg-amber-50{% endif %}"
                     data-data="{{ s.linha_extrato.data }}"
                     data-descricao-banco="{{ s.linha_extrato.descricao }}"
                     data-valor="{{ s.linha_extrato.valor }}"
@@ -49,7 +49,11 @@
                         R$ {{ "%.2f" | format(s.linha_extrato.valor | abs) }}
                     </td>
                     <td class="py-3 px-3">
-                        {% if s.origem == 'dicionario' %}
+                        {% if s.duplicada %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-200 text-amber-800">
+                                ⚠️ Duplicada
+                            </span>
+                        {% elif s.origem == 'dicionario' %}
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
                                 🎯 Dicionário ({{ s.score }}%)
                             </span>
@@ -79,25 +83,33 @@
                         </select>
                     </td>
                     <td class="py-3 px-3 text-center">
-                        <form
-                            hx-post="/importacao/confirmar"
-                            hx-target="closest tr"
-                            hx-swap="outerHTML"
-                            class="inline"
-                        >
-                            <input type="hidden" name="data" value="{{ s.linha_extrato.data }}">
-                            <input type="hidden" name="descricao_banco" value="{{ s.linha_extrato.descricao }}">
-                            <input type="hidden" name="valor" value="{{ s.linha_extrato.valor }}">
-                            <input type="hidden" name="transacao_id" value="{{ s.transacao_id or '' }}">
-                            <input type="hidden" name="categoria_id" value="{{ s.categoria_id or '' }}" class="cat-hidden">
-                            <input type="hidden" name="descricao" value="{{ s.transacao_descricao or s.linha_extrato.descricao }}" class="desc-hidden">
-                            <input type="hidden" name="conta_id" value="{{ conta_id }}">
-                            <input type="hidden" name="salvar_dicionario" value="on">
-                            <button type="submit"
-                                class="px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs rounded-lg transition-colors">
-                                ✓ Confirmar
+                        <div class="flex items-center justify-center gap-1">
+                            <form
+                                hx-post="/importacao/confirmar"
+                                hx-target="closest tr"
+                                hx-swap="outerHTML"
+                                class="inline"
+                            >
+                                <input type="hidden" name="data" value="{{ s.linha_extrato.data }}">
+                                <input type="hidden" name="descricao_banco" value="{{ s.linha_extrato.descricao }}">
+                                <input type="hidden" name="valor" value="{{ s.linha_extrato.valor }}">
+                                <input type="hidden" name="transacao_id" value="{{ s.transacao_id or '' }}">
+                                <input type="hidden" name="categoria_id" value="{{ s.categoria_id or '' }}" class="cat-hidden">
+                                <input type="hidden" name="descricao" value="{{ s.transacao_descricao or s.linha_extrato.descricao }}" class="desc-hidden">
+                                <input type="hidden" name="conta_id" value="{{ conta_id }}">
+                                <input type="hidden" name="salvar_dicionario" value="on">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs rounded-lg transition-colors">
+                                    ✓ Confirmar
+                                </button>
+                            </form>
+                            {% if s.duplicada %}
+                            <button onclick="this.closest('tr').remove()" title="Remover da lista"
+                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors">
+                                ✕ Excluir
                             </button>
-                        </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}

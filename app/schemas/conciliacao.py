@@ -18,6 +18,7 @@ class SugestaoConciliacao(BaseModel):
     categoria_nome: str | None = None
     score: float = 0.0
     origem: str = ""  # "dicionario", "fuzzy", "palavras_chave", "nova"
+    duplicada: bool = False
 
 
 class ConfirmacaoConciliacao(BaseModel):
