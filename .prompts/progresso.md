@@ -1,6 +1,6 @@
 # 📋 Willu — Registro de Progresso
 
-> Última atualização: 2026-02-28 (Docker adicionado)
+> Última atualização: 2026-02-28 (melhorias importação + hot-reload)
 > Propósito: Servir de contexto para LLMs nas próximas iterações de desenvolvimento.
 
 ---
@@ -111,7 +111,9 @@ willu/
 | Ciclo Projetada → Executada                  | ✅     | `models/transacao.py` (enum StatusTransacao)      |
 | Classificação (Fixa/Recorrente/Variável)     | ✅     | `models/categoria.py` (enum NaturezaCategoria)    |
 | Importação OFX                               | ✅     | `services/importacao.py` (ofxparse)               |
-| Importação CSV                               | ✅     | `services/importacao.py` (configurável BR)        |
+| Importação CSV                               | ✅     | `services/importacao.py` (configurável, defaults MercadoPago) |
+| Descrição editável na conciliação            | ✅     | `partials/conciliacao_lista.html` (input + sync hidden) |
+| Detecção de duplicatas na importação         | ✅     | `routers/importacao.py` + `schemas/conciliacao.py` |
 | Motor Conciliação: Dicionário (exato)        | ✅     | `services/conciliacao.py` → `_match_dicionario`   |
 | Motor Conciliação: Fuzzy (data±3d, valor±5%) | ✅     | `services/conciliacao.py` → `_match_fuzzy`        |
 | Motor Conciliação: Palavras-chave (fallback) | ✅     | `services/conciliacao.py` → `_match_palavras_chave`|
@@ -160,6 +162,8 @@ TOTAL: 27 passed, 0 failed
 5. **Deprecação Pydantic** — `app/config.py` usa `class Config:` em vez de `ConfigDict`. Gera warning no pytest. Baixa severidade.
 
 6. **`descricao_banco` no model Transacao** — Campo adicional não previsto no PRD (seção 6), mas útil. Adicionado como extensão.
+
+7. **Enum StatusTransacao desalinhado com PostgreSQL** — O Python define `EXECUTADA = "Executada"` mas o PostgreSQL armazena `EXECUTADA`. Queries com `Transacao.status == StatusTransacao.EXECUTADA` podem falhar. Workaround atual: evitar filtros por status onde possível. Correção ideal: alinhar os values do enum ou gerar migration.
 
 ---
 
@@ -217,10 +221,10 @@ NaturezaCategoria: Fixa | Recorrente | Variável
 StatusTransacao:   Projetada | Executada
 ```
 
-### CSV Import (defaults)
+### CSV Import (defaults — corrigido para MercadoPago)
 ```python
 encoding="utf-8", delimitador=";", col_data=0, col_descricao=1,
-col_valor=2, formato_data="%d/%m/%Y", pular_cabecalho=True
+col_valor=3, formato_data="%d-%m-%Y", pular_cabecalho=True
 ```
 
 ---
@@ -282,3 +286,31 @@ FastAPI 0.115, SQLAlchemy 2.0.35, asyncpg 0.29, Pydantic 2.9.2, Jinja2 3.1.4, HT
 7. **Docker multi-stage build** — Builder stage com gcc+libpq-dev para compilar deps; runtime stage leve com libpq5+curl apenas. Imagem final ~200MB.
 8. **`network: host` no build** — Necessário no WSL onde a rede bridge do Docker não resolve DNS externo durante o build.
 9. **Entrypoint com wait-for-db** — `entrypoint.sh` usa socket Python para aguardar PostgreSQL antes de rodar seed e uvicorn. Mais portável que `wait-for-it.sh`.
+10. **Hot-reload com volume + `--reload`** — `docker-compose.yml` monta `./app:/app/app` e passa `UVICORN_ARGS="--reload"` para que alterações em código Python e templates reflitam automaticamente no container sem rebuild.
+
+---
+
+## 10. Changelog — Sessão 2026-02-28
+
+### 🐛 Bug Fixes
+
+1. **CSV MercadoPago: coluna do valor errada** — `col_valor` mudou de `2` → `3` (a coluna `TRANSACTION_NET_AMOUNT` é índice 3). Arquivo: `services/importacao.py`.
+2. **CSV MercadoPago: formato de data errado** — `formato_data` mudou de `"%d/%m/%Y"` → `"%d-%m-%Y"` (datas com hífen). Arquivo: `services/importacao.py`.
+3. **Detecção de duplicatas não funcionava** — A query filtrava por `StatusTransacao.EXECUTADA` mas o enum Python envia `"Executada"` enquanto o PostgreSQL armazena `"EXECUTADA"`. Removido filtro por status (desnecessário) e adicionada comparação case-insensitive com `func.lower(func.trim(...))`. Arquivo: `routers/importacao.py`.
+4. **Código Python não recarregava no container** — O uvicorn rodava sem `--reload`, então o volume montado só atualizava templates (Jinja2 re-lê a cada request), mas não código Python. Adicionado `UVICORN_ARGS: "--reload"` no `docker-compose.yml`.
+
+### ✨ Melhorias
+
+5. **Hot-reload com Docker volume** — Adicionado `volumes: ["./app:/app/app"]` no `docker-compose.yml` para evitar rebuild a cada mudança de código.
+6. **Descrição editável na importação** — Na tela de conciliação (`partials/conciliacao_lista.html`), a descrição agora mostra um input editável com a sugestão (ou descrição do banco), e a descrição original do banco em texto pequeno como referência. Funciona tanto para confirmação individual (sincroniza hidden field) quanto para "Confirmar Todas" (lê do input).
+7. **Detecção de duplicatas na importação** — Ao importar extrato, cada linha é comparada com transações já existentes no banco (mesma `data_pagamento`, `descricao_banco` case-insensitive e `valor_realizado` com tolerância de R$ 0,01). Duplicatas aparecem com fundo amarelo, badge "⚠️ Duplicada" e botão "✕ Excluir" para remover da lista. Schema `SugestaoConciliacao` ganhou campo `duplicada: bool = False`.
+
+### 📁 Arquivos Alterados
+
+| Arquivo | Mudança |
+|---|---|
+| `services/importacao.py` | `col_valor=3`, `formato_data="%d-%m-%Y"` |
+| `docker-compose.yml` | Volume `./app:/app/app` + `UVICORN_ARGS: "--reload"` |
+| `schemas/conciliacao.py` | Campo `duplicada: bool = False` em `SugestaoConciliacao` |
+| `routers/importacao.py` | Lógica de detecção de duplicatas (query sem filtro de status, case-insensitive) |
+| `templates/partials/conciliacao_lista.html` | Input editável para descrição + UI de duplicatas (badge + botão excluir) |
