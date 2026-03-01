@@ -37,8 +37,8 @@ def importar_csv(
     delimitador: str = ";",
     col_data: int = 0,
     col_descricao: int = 1,
-    col_valor: int = 2,
-    formato_data: str = "%d/%m/%Y",
+    col_valor: int = 3,
+    formato_data: str = "%d-%m-%Y",
     pular_cabecalho: bool = True,
 ) -> list[LinhaExtrato]:
     """
