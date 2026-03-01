@@ -28,6 +28,8 @@ services:
       DATABASE_URL_SYNC: postgresql+psycopg2://postgres:postgres@db:5432/willu_financas
       APP_TITLE: "Willu - Finanças Pessoais"
       DEBUG: "true"
+    volumes:
+      - ./app:/app/app
     depends_on:
       db:
         condition: service_healthy
