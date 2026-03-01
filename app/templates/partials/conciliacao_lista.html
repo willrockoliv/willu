@@ -39,10 +39,10 @@
                         {{ s.linha_extrato.data.strftime('%d/%m/%Y') if s.linha_extrato.data is not string else s.linha_extrato.data }}
                     </td>
                     <td class="py-3 px-3">
-                        <div class="font-medium text-gray-800 max-w-xs truncate">{{ s.linha_extrato.descricao }}</div>
-                        {% if s.transacao_descricao %}
-                        <div class="text-xs text-primary-600 mt-0.5">→ {{ s.transacao_descricao }}</div>
-                        {% endif %}
+                        <div class="text-xs text-gray-400 mb-1 max-w-xs truncate" title="{{ s.linha_extrato.descricao }}">{{ s.linha_extrato.descricao }}</div>
+                        <input type="text" class="descricao-input rounded border-gray-300 text-sm py-1 px-2 w-full"
+                            value="{{ s.transacao_descricao or s.linha_extrato.descricao }}"
+                            data-row-idx="{{ loop.index0 }}">
                     </td>
                     <td class="py-3 px-3 text-right font-medium
                         {% if s.linha_extrato.valor >= 0 %}text-accent-600{% else %}text-red-600{% endif %}">
@@ -90,7 +90,7 @@
                             <input type="hidden" name="valor" value="{{ s.linha_extrato.valor }}">
                             <input type="hidden" name="transacao_id" value="{{ s.transacao_id or '' }}">
                             <input type="hidden" name="categoria_id" value="{{ s.categoria_id or '' }}" class="cat-hidden">
-                            <input type="hidden" name="descricao" value="{{ s.transacao_descricao or s.linha_extrato.descricao }}">
+                            <input type="hidden" name="descricao" value="{{ s.transacao_descricao or s.linha_extrato.descricao }}" class="desc-hidden">
                             <input type="hidden" name="conta_id" value="{{ conta_id }}">
                             <input type="hidden" name="salvar_dicionario" value="on">
                             <button type="submit"
@@ -116,18 +116,28 @@ document.querySelectorAll('.categoria-select').forEach(sel => {
     });
 });
 
+// Atualizar hidden da descricao ao editar o input
+document.querySelectorAll('.descricao-input').forEach(input => {
+    input.addEventListener('input', function() {
+        const row = this.closest('tr');
+        const hidden = row.querySelector('.desc-hidden');
+        if (hidden) hidden.value = this.value;
+    });
+});
+
 function confirmarTodas() {
     const rows = document.querySelectorAll('.conciliacao-row');
     const dados = [];
     rows.forEach(row => {
         const catSelect = row.querySelector('.categoria-select');
+        const descInput = row.querySelector('.descricao-input');
         dados.push({
             data: row.dataset.data,
             descricao_banco: row.dataset.descricaoBanco,
             valor: row.dataset.valor,
             transacao_id: row.dataset.transacaoId || null,
             categoria_id: catSelect ? catSelect.value : null,
-            descricao: row.dataset.descricaoBanco,
+            descricao: descInput ? descInput.value : row.dataset.descricaoBanco,
             conta_id: row.dataset.contaId,
         });
     });
