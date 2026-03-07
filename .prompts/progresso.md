@@ -1,6 +1,6 @@
 # 📋 Willu — Registro de Progresso
 
-> Última atualização: 2026-03-07 (projeção variáveis com média + natureza Esporádica)
+> Última atualização: 2026-03-07 (dark mode + filtros com botões)
 > Propósito: Servir de contexto para LLMs nas próximas iterações de desenvolvimento.
 
 ---
@@ -462,3 +462,46 @@ FastAPI 0.115, SQLAlchemy 2.0.35, asyncpg 0.29, Pydantic 2.9.2, pydantic-setting
 | `tests/test_models.py` | Enum Esporádica no test_natureza + contagem 3→4 |
 | `alembic/versions/929353c776fe_*.py` | Migration: ALTER TYPE naturezacategoria ADD VALUE 'Esporádica' |
 | `.prompts/progresso.md` | Atualizado com changelog e contagens |
+
+## 14. Changelog — Sessão 2026-03-07 (Dark Mode + Filtros Botões)
+
+### O que foi feito
+
+1. **Dark Mode completo** — Implementado em toda a aplicação
+   - `darkMode: 'class'` habilitado no Tailwind config
+   - Toggle sol/lua na navbar com persistência via `localStorage`
+   - Detecta preferência do sistema (`prefers-color-scheme: dark`) no primeiro acesso
+   - Script no `<head>` previne flash branco (FOUC)
+   - CSS global para `select`, `input`, `textarea` em dark mode
+   - Todos os templates atualizados com classes `dark:` (13 arquivos)
+
+2. **Filtros de Transações com Botões** — UX de 1 clique
+   - Meses: 12 botões-pill (Jan–Dez) com navegação de ano (setas ◀ ▶)
+   - Contas: botões "Todas" + cada conta cadastrada
+   - Botão ativo destacado com `bg-primary-600 text-white`
+   - Removido o form GET com selects + botão "Filtrar" (2 cliques → 1 clique)
+
+3. **Bug fix: filtro "Todas" contas** — Corrigido
+   - Antes: `<select>` enviava `conta_id=` (string vazia) → FastAPI falhava ao parsear `int | None`
+   - Agora: botão "Todas" simplesmente não inclui `conta_id` na URL → FastAPI recebe `None`
+
+### Testes
+- **168 passed, 0 failed** — Nenhum teste quebrou
+
+### Arquivos alterados
+
+| Arquivo | Mudança |
+|---|---|
+| `app/templates/base.html` | Dark mode infra (config, toggle, CSS global, script), modal e navbar com `dark:` |
+| `app/templates/transacoes.html` | Filtros trocados de selects para botões-link + dark mode |
+| `app/templates/dashboard.html` | Dark mode em cards, gráfico, calendário |
+| `app/templates/categorias.html` | Dark mode em formulário e lista |
+| `app/templates/contas.html` | Dark mode em formulário e lista |
+| `app/templates/importacao.html` | Dark mode em upload, info box |
+| `app/templates/partials/transacoes_lista.html` | Dark mode na tabela |
+| `app/templates/partials/categorias_lista.html` | Dark mode na tabela |
+| `app/templates/partials/contas_lista.html` | Dark mode nos cards |
+| `app/templates/partials/transacao_form.html` | Dark mode no formulário modal |
+| `app/templates/partials/calendario.html` | Dark mode no grid do calendário |
+| `app/templates/partials/conciliacao_lista.html` | Dark mode na tabela de conciliação |
+| `.prompts/progresso.md` | Atualizado com changelog |

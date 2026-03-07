@@ -4,28 +4,28 @@
 {% block content %}
 <div class="space-y-6">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">Categorias</h1>
-        <p class="text-sm text-gray-500 mt-1">Organize suas receitas e despesas por categoria</p>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Categorias</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize suas receitas e despesas por categoria</p>
     </div>
 
     <!-- Formulário de nova categoria -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h2 class="text-sm font-semibold text-gray-700 mb-3">Nova Categoria</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">Nova Categoria</h2>
         <form hx-post="/categorias/" hx-target="#categorias-lista" hx-swap="innerHTML" class="flex flex-wrap items-end gap-3">
             <div class="flex-1 min-w-[200px]">
-                <label class="block text-xs font-medium text-gray-500 mb-1">Nome</label>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nome</label>
                 <input type="text" name="nome" required placeholder="Ex: Alimentação, Salário..."
                     class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tipo</label>
                 <select name="tipo" class="rounded-lg border-gray-300 text-sm">
                     <option value="Despesa">💸 Despesa</option>
                     <option value="Receita">💰 Receita</option>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Natureza</label>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Natureza</label>
                 <select name="natureza" class="rounded-lg border-gray-300 text-sm">
                     <option value="Fixa">Fixa</option>
                     <option value="Recorrente">Recorrente</option>
@@ -39,7 +39,7 @@
     </div>
 
     <!-- Lista -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100" id="categorias-lista">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700" id="categorias-lista">
         {% include "partials/categorias_lista.html" %}
     </div>
 </div>

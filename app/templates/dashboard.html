@@ -6,12 +6,12 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p class="text-sm text-gray-500 mt-1">Projeção do seu fluxo de caixa</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Projeção do seu fluxo de caixa</p>
         </div>
         {% if contas %}
         <div class="flex items-center gap-3 flex-wrap">
-            <label class="text-sm font-medium text-gray-700">Conta:</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Conta:</label>
             <select
                 id="conta-select"
                 class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
@@ -24,7 +24,7 @@
                 {% endfor %}
             </select>
 
-            <label class="text-sm font-medium text-gray-700 ml-4">Projetar:</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 ml-4">Projetar:</label>
             <select
                 id="dias-select"
                 class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
@@ -42,12 +42,12 @@
 
     {% if not contas %}
     <!-- Estado vazio -->
-    <div class="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
-        <svg class="mx-auto h-16 w-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <svg class="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
         </svg>
-        <h3 class="mt-4 text-lg font-semibold text-gray-900">Nenhuma conta cadastrada</h3>
-        <p class="mt-2 text-gray-500">Comece cadastrando uma conta para ver sua projeção financeira.</p>
+        <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white">Nenhuma conta cadastrada</h3>
+        <p class="mt-2 text-gray-500 dark:text-gray-400">Comece cadastrando uma conta para ver sua projeção financeira.</p>
         <a href="/contas/" class="mt-6 inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
             Cadastrar Conta
         </a>
@@ -56,48 +56,48 @@
 
     <!-- Cards de Resumo -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Saldo Atual</p>
-                    <p class="text-2xl font-bold mt-1 {% if saldo_atual >= 0 %}text-accent-600{% else %}text-red-600{% endif %}">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo Atual</p>
+                    <p class="text-2xl font-bold mt-1 {% if saldo_atual >= 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %}">
                         R$ {{ "%.2f"|format(saldo_atual) }}
                     </p>
                 </div>
-                <div class="w-10 h-10 rounded-full {% if saldo_atual >= 0 %}bg-accent-100{% else %}bg-red-100{% endif %} flex items-center justify-center">
-                    <svg class="w-5 h-5 {% if saldo_atual >= 0 %}text-accent-600{% else %}text-red-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 rounded-full {% if saldo_atual >= 0 %}bg-accent-100 dark:bg-accent-900/30{% else %}bg-red-100 dark:bg-red-900/30{% endif %} flex items-center justify-center">
+                    <svg class="w-5 h-5 {% if saldo_atual >= 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Previsão Fim do Mês</p>
-                    <p class="text-2xl font-bold mt-1 {% if saldo_fim_mes >= 0 %}text-primary-600{% else %}text-red-600{% endif %}">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Previsão Fim do Mês</p>
+                    <p class="text-2xl font-bold mt-1 {% if saldo_fim_mes >= 0 %}text-primary-600 dark:text-primary-400{% else %}text-red-600 dark:text-red-400{% endif %}">
                         R$ {{ "%.2f"|format(saldo_fim_mes) }}
                     </p>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Dias com Saldo Negativo</p>
-                    <p class="text-2xl font-bold mt-1 {% if dias_negativos == 0 %}text-accent-600{% else %}text-red-600{% endif %}">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Dias com Saldo Negativo</p>
+                    <p class="text-2xl font-bold mt-1 {% if dias_negativos == 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %}">
                         {{ dias_negativos }}
                     </p>
                 </div>
-                <div class="w-10 h-10 rounded-full {% if dias_negativos == 0 %}bg-accent-100{% else %}bg-red-100{% endif %} flex items-center justify-center">
-                    <svg class="w-5 h-5 {% if dias_negativos == 0 %}text-accent-600{% else %}text-red-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 rounded-full {% if dias_negativos == 0 %}bg-accent-100 dark:bg-accent-900/30{% else %}bg-red-100 dark:bg-red-900/30{% endif %} flex items-center justify-center">
+                    <svg class="w-5 h-5 {% if dias_negativos == 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
                     </svg>
                 </div>
@@ -106,16 +106,16 @@
     </div>
 
     <!-- Gráfico de Projeção -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Projeção de Saldo</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Projeção de Saldo</h2>
         <div class="h-80">
             <canvas id="grafico-projecao"></canvas>
         </div>
     </div>
 
     <!-- Calendário Financeiro -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Calendário Financeiro</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Calendário Financeiro</h2>
         <div
             id="calendario-container"
             hx-get="/api/calendario?conta_id={{ conta_selecionada }}&ano={{ hoje.year }}&mes={{ hoje.month }}"

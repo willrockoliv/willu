@@ -10,18 +10,18 @@
     class="space-y-4"
 >
     <!-- Tipo: Receita ou Despesa -->
-    <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+    <div class="flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
         <label class="flex-1 cursor-pointer">
             <input type="radio" name="tipo_valor" value="despesa" class="peer hidden"
                 {% if not transacao or (transacao and transacao.valor_previsto < 0) %}checked{% endif %}>
-            <div class="peer-checked:bg-red-50 peer-checked:text-red-700 peer-checked:border-red-300 text-center py-2.5 text-sm font-medium text-gray-600 border-r border-gray-200 hover:bg-gray-50 transition-colors">
+            <div class="peer-checked:bg-red-50 peer-checked:text-red-700 peer-checked:border-red-300 dark:peer-checked:bg-red-900/30 dark:peer-checked:text-red-300 text-center py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 💸 Despesa
             </div>
         </label>
         <label class="flex-1 cursor-pointer">
             <input type="radio" name="tipo_valor" value="receita" class="peer hidden"
                 {% if transacao and transacao.valor_previsto > 0 %}checked{% endif %}>
-            <div class="peer-checked:bg-green-50 peer-checked:text-green-700 peer-checked:border-green-300 text-center py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            <div class="peer-checked:bg-green-50 peer-checked:text-green-700 peer-checked:border-green-300 dark:peer-checked:bg-green-900/30 dark:peer-checked:text-green-300 text-center py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 💰 Receita
             </div>
         </label>
@@ -29,7 +29,7 @@
 
     <!-- Descrição -->
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descrição</label>
         <input type="text" name="descricao" required
             value="{{ transacao.descricao if transacao else '' }}"
             placeholder="Ex: Aluguel, Salário, Supermercado..."
@@ -38,7 +38,7 @@
 
     <!-- Valor -->
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valor (R$)</label>
         <input type="number" name="valor_previsto" step="0.01" min="0" required
             value="{{ '%.2f' | format(transacao.valor_previsto | abs) if transacao else '' }}"
             placeholder="0,00"
@@ -47,7 +47,7 @@
 
     <!-- Data de Vencimento -->
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Data de Vencimento</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de Vencimento</label>
         <input type="date" name="data_vencimento" required
             value="{{ transacao.data_vencimento.isoformat() if transacao else '' }}"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
@@ -55,7 +55,7 @@
 
     <!-- Conta -->
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Conta</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Conta</label>
         <select name="conta_id" required
             class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
             <option value="">Selecione...</option>
@@ -69,7 +69,7 @@
 
     <!-- Categoria -->
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria</label>
         <select name="categoria_id" id="categoria-select"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
             <option value="" data-natureza="">Sem categoria</option>
@@ -83,26 +83,26 @@
 
     <!-- Parcelas (visível apenas para Recorrente) -->
     <div id="parcela-fields" style="display: {% if transacao and transacao.total_parcelas %}block{% else %}none{% endif %}">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Parcelas</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Parcelas</label>
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <input type="number" name="parcela_atual" min="1" placeholder="Atual"
                     value="{{ transacao.parcela_atual if transacao and transacao.parcela_atual else '' }}"
                     class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
-                <span class="text-xs text-gray-400">Parcela atual</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">Parcela atual</span>
             </div>
             <div>
                 <input type="number" name="total_parcelas" min="1" placeholder="Total"
                     value="{{ transacao.total_parcelas if transacao and transacao.total_parcelas else '' }}"
                     class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
-                <span class="text-xs text-gray-400">Total de parcelas</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">Total de parcelas</span>
             </div>
         </div>
     </div>
 
     <!-- Status -->
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
         <select name="status"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
             <option value="Projetada" {% if not transacao or transacao.status.value == 'Projetada' %}selected{% endif %}>
@@ -116,7 +116,7 @@
 
     <!-- Data de Pagamento (opcional) -->
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Data de Pagamento (opcional)</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de Pagamento (opcional)</label>
         <input type="date" name="data_pagamento"
             value="{{ transacao.data_pagamento.isoformat() if transacao and transacao.data_pagamento else '' }}"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">

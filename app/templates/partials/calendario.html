@@ -13,17 +13,17 @@
         <button
             hx-get="/api/calendario?conta_id={{ conta_id }}&ano={{ ano_ant }}&mes={{ mes_ant }}"
             hx-target="#calendario-container"
-            class="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
         >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </button>
-        <h3 class="text-lg font-semibold text-gray-800">{{ meses_nomes[mes] }} {{ ano }}</h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">{{ meses_nomes[mes] }} {{ ano }}</h3>
         <button
             hx-get="/api/calendario?conta_id={{ conta_id }}&ano={{ ano_prox }}&mes={{ mes_prox }}"
             hx-target="#calendario-container"
-            class="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
         >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -34,7 +34,7 @@
     <!-- Grid do calendário -->
     <div class="grid grid-cols-7 gap-1">
         {% for dia in dias_semana %}
-        <div class="text-center text-xs font-medium text-gray-500 py-2">{{ dia }}</div>
+        <div class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2">{{ dia }}</div>
         {% endfor %}
 
         {# Preencher dias vazios antes do dia 1 com base no weekday (passado pelo backend) #}
@@ -51,19 +51,19 @@
 
             <div class="relative min-h-[4.5rem] rounded-lg p-1.5 text-xs border
                 {% if is_hoje %}
-                    border-primary-400 bg-primary-50
+                    border-primary-400 bg-primary-50 dark:bg-primary-900/30 dark:border-primary-600
                 {% elif saldo < 0 %}
-                    border-red-200 bg-red-50
+                    border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800
                 {% elif mov < -500 %}
-                    border-amber-200 bg-amber-50
+                    border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800
                 {% else %}
-                    border-gray-100 bg-white
+                    border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800
                 {% endif %}
                 hover:shadow-sm transition-shadow cursor-default"
                 title="Saldo: R$ {{ '%.2f' | format(saldo) }}{% if mov != 0 %} | Mov: R$ {{ '%.2f' | format(mov) }}{% endif %}"
             >
                 <div class="flex justify-between items-start">
-                    <span class="font-medium {% if is_hoje %}text-primary-700{% else %}text-gray-700{% endif %}">
+                    <span class="font-medium {% if is_hoje %}text-primary-700 dark:text-primary-300{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                         {{ dia_num }}
                     </span>
                     {% if saldo < 0 %}
@@ -73,11 +73,11 @@
                     {% endif %}
                 </div>
                 {% if mov != 0 %}
-                <div class="mt-1 {% if mov > 0 %}text-accent-600{% else %}text-red-600{% endif %} font-medium truncate">
+                <div class="mt-1 {% if mov > 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %} font-medium truncate">
                     {{ "%.0f" | format(mov) }}
                 </div>
                 {% endif %}
-                <div class="text-gray-400 truncate" style="font-size: 0.6rem;">
+                <div class="text-gray-400 dark:text-gray-500 truncate" style="font-size: 0.6rem;">
                     {{ "%.0f" | format(saldo) }}
                 </div>
             </div>
@@ -85,15 +85,15 @@
     </div>
 
     <!-- Legenda -->
-    <div class="flex items-center gap-4 text-xs text-gray-500 pt-2">
+    <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-2">
         <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded border-2 border-primary-400 bg-primary-50"></span> Hoje
+            <span class="w-3 h-3 rounded border-2 border-primary-400 bg-primary-50 dark:bg-primary-900/30"></span> Hoje
         </div>
         <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded bg-red-50 border border-red-200"></span> Saldo Negativo
+            <span class="w-3 h-3 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"></span> Saldo Negativo
         </div>
         <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded bg-amber-50 border border-amber-200"></span> Alto Impacto
+            <span class="w-3 h-3 rounded bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"></span> Alto Impacto
         </div>
     </div>
 </div>

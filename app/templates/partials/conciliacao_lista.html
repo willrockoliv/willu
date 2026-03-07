@@ -2,7 +2,7 @@
 {% if sugestoes %}
 <div class="space-y-3">
     <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-800">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
             {{ sugestoes | length }} transações encontradas
         </h3>
         <button
@@ -17,25 +17,25 @@
     <div class="overflow-x-auto">
         <table class="w-full text-sm" id="tabela-conciliacao">
             <thead>
-                <tr class="border-b border-gray-200">
-                    <th class="text-left py-3 px-3 font-medium text-gray-500">Data</th>
-                    <th class="text-left py-3 px-3 font-medium text-gray-500">Descrição Banco</th>
-                    <th class="text-right py-3 px-3 font-medium text-gray-500">Valor</th>
-                    <th class="text-left py-3 px-3 font-medium text-gray-500">Match</th>
-                    <th class="text-left py-3 px-3 font-medium text-gray-500">Categoria</th>
-                    <th class="text-center py-3 px-3 font-medium text-gray-500">Ação</th>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <th class="text-left py-3 px-3 font-medium text-gray-500 dark:text-gray-400">Data</th>
+                    <th class="text-left py-3 px-3 font-medium text-gray-500 dark:text-gray-400">Descrição Banco</th>
+                    <th class="text-right py-3 px-3 font-medium text-gray-500 dark:text-gray-400">Valor</th>
+                    <th class="text-left py-3 px-3 font-medium text-gray-500 dark:text-gray-400">Match</th>
+                    <th class="text-left py-3 px-3 font-medium text-gray-500 dark:text-gray-400">Categoria</th>
+                    <th class="text-center py-3 px-3 font-medium text-gray-500 dark:text-gray-400">Ação</th>
                 </tr>
             </thead>
             <tbody>
                 {% for s in sugestoes %}
-                <tr class="border-b border-gray-100 hover:bg-gray-50 conciliacao-row {% if s.duplicada %}bg-amber-50{% endif %}"
+                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 conciliacao-row {% if s.duplicada %}bg-amber-50 dark:bg-amber-900/20{% endif %}"
                     data-data="{{ s.linha_extrato.data }}"
                     data-descricao-banco="{{ s.linha_extrato.descricao }}"
                     data-valor="{{ s.linha_extrato.valor }}"
                     data-transacao-id="{{ s.transacao_id or '' }}"
                     data-conta-id="{{ conta_id }}"
                 >
-                    <td class="py-3 px-3 text-gray-600">
+                    <td class="py-3 px-3 text-gray-600 dark:text-gray-300">
                         {{ s.linha_extrato.data.strftime('%d/%m/%Y') if s.linha_extrato.data is not string else s.linha_extrato.data }}
                     </td>
                     <td class="py-3 px-3">
@@ -45,7 +45,7 @@
                             data-row-idx="{{ loop.index0 }}">
                     </td>
                     <td class="py-3 px-3 text-right font-medium
-                        {% if s.linha_extrato.valor >= 0 %}text-accent-600{% else %}text-red-600{% endif %}">
+                        {% if s.linha_extrato.valor >= 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %}">
                         R$ {{ "%.2f" | format(s.linha_extrato.valor | abs) }}
                     </td>
                     <td class="py-3 px-3">
@@ -173,7 +173,7 @@ function confirmarTodas() {
 </script>
 
 {% else %}
-<div class="text-center py-8 text-gray-400">
+<div class="text-center py-8 text-gray-400 dark:text-gray-500">
     <p class="text-sm">Nenhuma transação encontrada no extrato.</p>
 </div>
 {% endif %}
