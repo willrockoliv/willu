@@ -29,8 +29,8 @@ async def dashboard(
     # Se nenhuma conta, mostrar página vazia
     if not contas:
         return templates.TemplateResponse(
-            "dashboard.html",
-            {"request": request, "contas": [], "projecao": [], "conta_selecionada": None, "hoje": date.today()},
+            request, "dashboard.html",
+            {"contas": [], "projecao": [], "conta_selecionada": None, "hoje": date.today()},
         )
 
     conta_selecionada = conta_id or (contas[0].id if contas else None)
@@ -57,9 +57,8 @@ async def dashboard(
     dias_negativos = [p for p in projecao if p["saldo"] < 0 and p["tipo"] == "projetado"]
 
     return templates.TemplateResponse(
-        "dashboard.html",
+        request, "dashboard.html",
         {
-            "request": request,
             "contas": contas,
             "conta_selecionada": conta_selecionada,
             "projecao": projecao,
@@ -86,8 +85,8 @@ async def api_projecao(
     projecao = await calcular_projecao(db, conta_id, data_inicio, data_fim)
 
     return templates.TemplateResponse(
-        "partials/grafico.html",
-        {"request": request, "projecao": projecao, "hoje": hoje},
+        request, "partials/grafico.html",
+        {"projecao": projecao, "hoje": hoje},
     )
 
 
@@ -112,14 +111,17 @@ async def api_calendario(
 
     projecao = await calcular_projecao(db, conta_id, data_inicio, data_fim)
 
+    # Weekday do dia 1 do mês (0=segunda, 6=domingo) para alinhar o grid
+    primeiro_weekday = data_inicio.weekday()
+
     return templates.TemplateResponse(
-        "partials/calendario.html",
+        request, "partials/calendario.html",
         {
-            "request": request,
             "projecao": projecao,
             "ano": ano,
             "mes": mes,
             "conta_id": conta_id,
             "hoje": hoje,
+            "primeiro_weekday": primeiro_weekday,
         },
     )

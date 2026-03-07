@@ -20,8 +20,12 @@ class Categoria(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
-    tipo: Mapped[TipoCategoria] = mapped_column(Enum(TipoCategoria), nullable=False)
-    natureza: Mapped[NaturezaCategoria] = mapped_column(Enum(NaturezaCategoria), nullable=False)
+    tipo: Mapped[TipoCategoria] = mapped_column(
+        Enum(TipoCategoria, values_callable=lambda x: [e.value for e in x]), nullable=False
+    )
+    natureza: Mapped[NaturezaCategoria] = mapped_column(
+        Enum(NaturezaCategoria, values_callable=lambda x: [e.value for e in x]), nullable=False
+    )
 
     transacoes: Mapped[list["Transacao"]] = relationship(  # noqa: F821
         back_populates="categoria"

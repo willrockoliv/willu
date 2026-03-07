@@ -58,9 +58,8 @@ async def listar_transacoes(
     categorias = result_cats.scalars().all()
 
     return templates.TemplateResponse(
-        "transacoes.html",
+        request, "transacoes.html",
         {
-            "request": request,
             "transacoes": transacoes,
             "contas": contas,
             "categorias": categorias,
@@ -105,8 +104,8 @@ async def lista_transacoes_partial(
     transacoes = result.scalars().all()
 
     return templates.TemplateResponse(
-        "partials/transacoes_lista.html",
-        {"request": request, "transacoes": transacoes},
+        request, "partials/transacoes_lista.html",
+        {"transacoes": transacoes},
     )
 
 
@@ -119,8 +118,8 @@ async def form_transacao(request: Request, db: AsyncSession = Depends(get_db)):
     categorias = result_cats.scalars().all()
 
     return templates.TemplateResponse(
-        "partials/transacao_form.html",
-        {"request": request, "contas": contas, "categorias": categorias, "transacao": None},
+        request, "partials/transacao_form.html",
+        {"contas": contas, "categorias": categorias, "transacao": None},
     )
 
 
@@ -138,8 +137,8 @@ async def form_editar_transacao(
     categorias = result_cats.scalars().all()
 
     return templates.TemplateResponse(
-        "partials/transacao_form.html",
-        {"request": request, "contas": contas, "categorias": categorias, "transacao": transacao},
+        request, "partials/transacao_form.html",
+        {"contas": contas, "categorias": categorias, "transacao": transacao},
     )
 
 

@@ -22,7 +22,7 @@ async def pagina_importacao(request: Request, db: AsyncSession = Depends(get_db)
     result = await db.execute(select(Conta).order_by(Conta.nome))
     contas = result.scalars().all()
     return templates.TemplateResponse(
-        "importacao.html", {"request": request, "contas": contas}
+        request, "importacao.html", {"contas": contas}
     )
 
 
@@ -69,9 +69,8 @@ async def upload_extrato(
     categorias = result.scalars().all()
 
     return templates.TemplateResponse(
-        "partials/conciliacao_lista.html",
+        request, "partials/conciliacao_lista.html",
         {
-            "request": request,
             "sugestoes": sugestoes,
             "categorias": categorias,
             "conta_id": conta_id,

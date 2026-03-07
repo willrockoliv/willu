@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from functools import lru_cache
 
 
@@ -8,8 +9,7 @@ class Settings(BaseSettings):
     APP_TITLE: str = "Willu - Finanças Pessoais"
     DEBUG: bool = True
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(env_file=".env")
 
 
 @lru_cache()

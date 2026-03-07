@@ -160,6 +160,37 @@ class TestCategoriasAPI:
         assert "Salário" in response.text
         assert "Aluguel" not in response.text
 
+    @pytest.mark.asyncio
+    async def test_atualizar_categoria(self, client):
+        """PUT deve atualizar dados da categoria."""
+        await client.post(
+            "/categorias/",
+            data={"nome": "Antiga", "tipo": "Despesa", "natureza": "Fixa"},
+        )
+        response = await client.put(
+            "/categorias/1",
+            data={"nome": "Atualizada", "tipo": "Receita", "natureza": "Variável"},
+        )
+        assert response.status_code == 200
+        assert "Atualizada" in response.text
+
+    @pytest.mark.asyncio
+    async def test_atualizar_categoria_parcial(self, client):
+        """PUT com apenas nome deve atualizar só o nome."""
+        await client.post(
+            "/categorias/",
+            data={"nome": "Original", "tipo": "Despesa", "natureza": "Fixa"},
+        )
+        response = await client.put("/categorias/1", data={"nome": "Renomeada"})
+        assert response.status_code == 200
+        assert "Renomeada" in response.text
+
+    @pytest.mark.asyncio
+    async def test_atualizar_categoria_inexistente(self, client):
+        """PUT em categoria inexistente deve retornar 404."""
+        response = await client.put("/categorias/999", data={"nome": "Fantasma"})
+        assert response.status_code == 404
+
 
 # ───────────────────────────── Transações ─────────────────────────────
 
@@ -323,6 +354,17 @@ class TestDashboardAPI:
         """API de calendário deve retornar partial com grid."""
         await client.post("/contas/", data={"nome": "Nubank", "saldo_inicial": "5000"})
         response = await client.get("/api/calendario?conta_id=1&ano=2026&mes=3")
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_api_calendario_alinhamento(self, client):
+        """Calendário deve ter divs vazias para alinhar o primeiro dia do mês."""
+        await client.post("/contas/", data={"nome": "Nubank", "saldo_inicial": "5000"})
+        # Março 2026 começa em domingo (weekday=6), deve ter 6 divs vazias antes do dia 1
+        response = await client.get("/api/calendario?conta_id=1&ano=2026&mes=3")
+        assert response.status_code == 200
+        # Janeiro 2026 começa em quinta (weekday=3), deve ter 3 divs vazias
+        response = await client.get("/api/calendario?conta_id=1&ano=2026&mes=1")
         assert response.status_code == 200
 
     @pytest.mark.asyncio

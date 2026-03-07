@@ -21,7 +21,8 @@ class Transacao(Base):
     data_vencimento: Mapped[date] = mapped_column(Date, nullable=False)
     data_pagamento: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[StatusTransacao] = mapped_column(
-        Enum(StatusTransacao), default=StatusTransacao.PROJETADA, nullable=False
+        Enum(StatusTransacao, values_callable=lambda x: [e.value for e in x]),
+        default=StatusTransacao.PROJETADA, nullable=False
     )
     descricao: Mapped[str] = mapped_column(String(255), nullable=False)
     descricao_banco: Mapped[str | None] = mapped_column(Text, nullable=True)

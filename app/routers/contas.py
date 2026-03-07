@@ -17,7 +17,7 @@ async def listar_contas(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Conta).order_by(Conta.nome))
     contas = result.scalars().all()
     return templates.TemplateResponse(
-        "contas.html", {"request": request, "contas": contas}
+        request, "contas.html", {"contas": contas}
     )
 
 
@@ -26,7 +26,7 @@ async def lista_contas_partial(request: Request, db: AsyncSession = Depends(get_
     result = await db.execute(select(Conta).order_by(Conta.nome))
     contas = result.scalars().all()
     return templates.TemplateResponse(
-        "partials/contas_lista.html", {"request": request, "contas": contas}
+        request, "partials/contas_lista.html", {"contas": contas}
     )
 
 
@@ -44,7 +44,7 @@ async def criar_conta(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Conta).order_by(Conta.nome))
     contas = result.scalars().all()
     return templates.TemplateResponse(
-        "partials/contas_lista.html", {"request": request, "contas": contas}
+        request, "partials/contas_lista.html", {"contas": contas}
     )
 
 
@@ -68,7 +68,7 @@ async def atualizar_conta(
     result = await db.execute(select(Conta).order_by(Conta.nome))
     contas = result.scalars().all()
     return templates.TemplateResponse(
-        "partials/contas_lista.html", {"request": request, "contas": contas}
+        request, "partials/contas_lista.html", {"contas": contas}
     )
 
 
@@ -85,5 +85,5 @@ async def deletar_conta(
     result = await db.execute(select(Conta).order_by(Conta.nome))
     contas = result.scalars().all()
     return templates.TemplateResponse(
-        "partials/contas_lista.html", {"request": request, "contas": contas}
+        request, "partials/contas_lista.html", {"contas": contas}
     )

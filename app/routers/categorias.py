@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.categoria import Categoria, TipoCategoria, NaturezaCategoria
-from app.schemas.categoria import CategoriaCreate
+from app.schemas.categoria import CategoriaCreate, CategoriaUpdate
 
 router = APIRouter(prefix="/categorias", tags=["Categorias"])
 templates = Jinja2Templates(directory="app/templates")
@@ -17,9 +17,8 @@ async def listar_categorias(request: Request, db: AsyncSession = Depends(get_db)
     result = await db.execute(select(Categoria).order_by(Categoria.tipo, Categoria.nome))
     categorias = result.scalars().all()
     return templates.TemplateResponse(
-        "categorias.html",
+        request, "categorias.html",
         {
-            "request": request,
             "categorias": categorias,
             "tipos": TipoCategoria,
             "naturezas": NaturezaCategoria,
@@ -32,7 +31,7 @@ async def lista_categorias_partial(request: Request, db: AsyncSession = Depends(
     result = await db.execute(select(Categoria).order_by(Categoria.tipo, Categoria.nome))
     categorias = result.scalars().all()
     return templates.TemplateResponse(
-        "partials/categorias_lista.html", {"request": request, "categorias": categorias}
+        request, "partials/categorias_lista.html", {"categorias": categorias}
     )
 
 
@@ -51,7 +50,33 @@ async def criar_categoria(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Categoria).order_by(Categoria.tipo, Categoria.nome))
     categorias = result.scalars().all()
     return templates.TemplateResponse(
-        "partials/categorias_lista.html", {"request": request, "categorias": categorias}
+        request, "partials/categorias_lista.html", {"categorias": categorias}
+    )
+
+
+@router.put("/{categoria_id}", response_class=HTMLResponse)
+async def atualizar_categoria(
+    categoria_id: int, request: Request, db: AsyncSession = Depends(get_db)
+):
+    form = await request.form()
+    result = await db.execute(select(Categoria).where(Categoria.id == categoria_id))
+    cat = result.scalar_one_or_none()
+    if not cat:
+        return HTMLResponse("<p class='text-red-500'>Categoria não encontrada</p>", status_code=404)
+
+    if form.get("nome"):
+        cat.nome = form["nome"]
+    if form.get("tipo"):
+        cat.tipo = form["tipo"]
+    if form.get("natureza"):
+        cat.natureza = form["natureza"]
+
+    await db.flush()
+
+    result = await db.execute(select(Categoria).order_by(Categoria.tipo, Categoria.nome))
+    categorias = result.scalars().all()
+    return templates.TemplateResponse(
+        request, "partials/categorias_lista.html", {"categorias": categorias}
     )
 
 
@@ -68,7 +93,7 @@ async def deletar_categoria(
     result = await db.execute(select(Categoria).order_by(Categoria.tipo, Categoria.nome))
     categorias = result.scalars().all()
     return templates.TemplateResponse(
-        "partials/categorias_lista.html", {"request": request, "categorias": categorias}
+        request, "partials/categorias_lista.html", {"categorias": categorias}
     )
 
 

@@ -1,6 +1,6 @@
 # 📋 Willu — Registro de Progresso
 
-> Última atualização: 2026-02-28 (melhorias importação + hot-reload)
+> Última atualização: 2026-03-07 (correção de bugs, débitos técnicos, expansão de testes)
 > Propósito: Servir de contexto para LLMs nas próximas iterações de desenvolvimento.
 
 ---
@@ -69,9 +69,13 @@ willu/
 │
 ├── tests/
 │   ├── __init__.py
-│   ├── test_projecao.py         # 9 testes — projeção de saldo dia a dia
-│   ├── test_conciliacao.py      # 11 testes — motor conciliação (dicionário/fuzzy/keywords)
-│   └── test_importacao.py       # 7 testes — parser CSV + detecção formato
+│   ├── conftest.py              # Fixtures: SQLite in-memory, AsyncClient, db_session
+│   ├── test_api.py              # 40 testes — integração HTTP (contas, categorias, transações, dashboard, importação)
+│   ├── test_schemas.py          # 22 testes — validação Pydantic schemas
+│   ├── test_models.py           # 17 testes — valor_efetivo, repr, enums
+│   ├── test_projecao.py         # 15 testes — projeção de saldo dia a dia
+│   ├── test_conciliacao.py      # 19 testes — motor conciliação (dicionário/fuzzy/keywords)
+│   └── test_importacao.py       # 21 testes — parser CSV/OFX + detecção formato
 │
 ├── alembic/
 │   ├── env.py                   # Importa todos os models, usa DATABASE_URL_SYNC
@@ -82,15 +86,15 @@ willu/
 │   ├── __init__.py
 │   └── seed.py                  # 24 categorias iniciais (idempotente)
 │
-├── .env.example                 # Modelo de variáveis de ambiente
-├── .env                         # Cópia local (gitignored)
-├── requirements.txt             # 17 dependências
+├── requirements.txt             # 18 dependências (inclui aiosqlite para testes)
 ├── pytest.ini                   # asyncio_mode = auto
 ├── alembic.ini
 ├── Dockerfile                   # Multi-stage build (python:3.11-slim)
 ├── docker-compose.yml           # app + postgres:16-alpine, network host build
 ├── entrypoint.sh                # Wait DB + seed + uvicorn
 ├── .dockerignore                # Exclui .venv, tests, .git, .prompts
+├── .github/
+│   └── copilot-instructions.md  # Convenções de dev para GitHub Copilot
 ├── README.md
 └── prompt-prd.md                # PRD completo
 ```
@@ -104,7 +108,7 @@ willu/
 | Dashboard Visual (gráfico projeção)         | ✅     | `routers/dashboard.py` · `templates/dashboard.html` |
 | Gráfico: linha sólida (real) + pontilhada   | ✅     | Chart.js no `dashboard.html` (JS inline)          |
 | Tooltips interativos com composição diária   | ✅     | Chart.js tooltip callback                         |
-| Calendário financeiro mensal                 | ⚠️     | `partials/calendario.html` — ver bugs abaixo     |
+| Calendário financeiro mensal                 | ✅     | `partials/calendario.html` — corrigido alinhamento |
 | Cards resumo (saldo atual, fim mês, negativos)| ✅    | `routers/dashboard.py` + `dashboard.html`         |
 | Gestão de Transações (CRUD completo)         | ✅     | `routers/transacoes.py` (7 endpoints)             |
 | Entrada Rápida (FAB global)                  | ✅     | `base.html` — botão flutuante + modal HTMX       |
@@ -119,29 +123,39 @@ willu/
 | Motor Conciliação: Palavras-chave (fallback) | ✅     | `services/conciliacao.py` → `_match_palavras_chave`|
 | Loop de Aprendizado (dicionário)             | ✅     | `confirmar_conciliacao` → salva em `DicionarioConciliacao`|
 | CRUD Contas                                  | ✅     | `routers/contas.py` (5 endpoints)                 |
-| CRUD Categorias                              | ✅     | `routers/categorias.py` (5 endpoints)             |
+| CRUD Categorias                              | ✅     | `routers/categorias.py` (6 endpoints: CRUD + PUT + options) |
 | Seed de categorias iniciais (24)             | ✅     | `scripts/seed.py`                                 |
-| Testes unitários (projeção + conciliação)    | ✅     | 27/27 passando                                    |
+| Testes unitários + integração                | ✅     | 138/138 passando, 0 warnings                     |
 
 ---
 
 ## 4. Testes — Status Atual
 
 ```
-tests/test_projecao.py      —  9 passed ✅
-tests/test_conciliacao.py   — 11 passed ✅
-tests/test_importacao.py    —  7 passed ✅
-========================================
-TOTAL: 27 passed, 0 failed
+tests/test_api.py            — 40 passed ✅  (integração HTTP: contas, categorias, transações, dashboard, importação)
+tests/test_schemas.py        — 22 passed ✅  (validação Pydantic)
+tests/test_models.py         — 17 passed ✅  (valor_efetivo, repr, enums)
+tests/test_projecao.py       — 15 passed ✅  (projeção de saldo)
+tests/test_conciliacao.py    — 19 passed ✅  (motor conciliação)
+tests/test_importacao.py     — 21 passed ✅  (parser CSV/OFX)
+tests/conftest.py            — fixtures (SQLite in-memory + AsyncClient)
+=============================================
+TOTAL: 138 passed, 0 failed, 0 warnings
 ```
 
 ### Cobertura dos testes:
 
-**Projeção:** sem transações, com despesa, com receita, múltiplas no mesmo dia, saldo negativo, tipo real/projetado, movimentação diária, acumulação antes do período, arredondamento 2 casas.
+**API (integração HTTP):** CRUD contas (criar, listar, editar, deletar, inexistente), CRUD categorias (criar despesa/receita, listar, editar, edição parcial, deletar, inexistente, options + filtro tipo), CRUD transações (criar despesa/receita, form nova/editar, atualizar, deletar, inexistente), dashboard (sem contas, com conta, seleção, projeção, calendário + alinhamento, projeção com transações), importação (página, upload CSV, conciliação, confirmar individual/todas).
 
-**Conciliação:** match dicionário (exato + sem), fuzzy (valor+data exatos, tolerância data ±3d, tolerância valor ±5%, fora tolerância, melhor candidato), palavras-chave (match + sem), prioridade dicionário > fuzzy, transação nova.
+**Schemas:** Validação dos 4 domínios (conta, categoria, transação, conciliação) — campos obrigatórios, defaults, rejeição de inválidos, update parcial, from_attributes.
 
-**Importação:** CSV básico BR, valores com ponto milhar, linhas inválidas (skip), CSV vazio, detecção formato (OFX/CSV/erro).
+**Models:** valor_efetivo (executada com/sem realizado, projetada, zero, receita), repr dos 4 models, enums (values, tipo string, contagem membros).
+
+**Projeção:** sem transações, com despesa, com receita, múltiplas no mesmo dia, saldo negativo, tipo real/projetado, movimentação diária, acumulação antes do período, arredondamento 2 casas, período único dia, saldo zero, transações antes+durante, valores grandes, saldo inicial negativo, movimentação zero.
+
+**Conciliação:** match dicionário (exato + sem), fuzzy (valor+data exatos, tolerância data ±3d, tolerância valor ±5%, fora tolerância, melhor candidato), palavras-chave (match + sem), prioridade dicionário > fuzzy, transação nova, edge cases (whitespace, valor zero, match perfeito, janela dias, case insensitive, preservação, prioridade fuzzy > keywords).
+
+**Importação:** CSV (básico BR, ponto milhar, linhas inválidas, vazio, sem cabeçalho, delimitador custom, formato data, encoding latin1, colunas custom, centavos), OFX (básico, payee fallback, vazio, sem statement, date como date, múltiplas contas), detecção formato (ofx, csv, erro, caminho, sem extensão).
 
 ---
 
@@ -149,21 +163,23 @@ TOTAL: 27 passed, 0 failed
 
 ### 🔴 Bugs
 
-1. **Calendário desalinhado** — `partials/calendario.html` (linhas ~51-56) tem lógica incompleta para calcular o weekday do 1° dia do mês. Os dias vazios antes do dia 1 não são renderizados, fazendo o grid 7 colunas ficar desalinhado com os headers (Seg-Dom).
+1. ~~**Calendário desalinhado**~~ — ✅ Corrigido. `primeiro_weekday` calculado no backend e passado ao template. Grid agora renderiza divs vazias antes do dia 1.
 
 ### 🟡 Débitos Técnicos
 
 2. **Alembic sem migrações** — Infraestrutura configurada (`alembic/env.py` importa todos os models) mas nenhuma migration foi gerada. O app cria tabelas via `Base.metadata.create_all` no startup (dev mode). Precisa rodar `alembic revision --autogenerate` para produção.
 
-3. **Sem testes de integração HTTP** — `httpx` está instalado mas não há testes usando `AsyncClient` contra os endpoints FastAPI. Só testes das funções `_sync`.
+3. ~~**Sem testes de integração HTTP**~~ — ✅ Resolvido. 40 testes de integração HTTP via `httpx.AsyncClient` com SQLite in-memory.
 
-4. **PUT de categorias não implementado** — O schema `CategoriaUpdate` existe mas o router `/categorias/{id}` PUT não tem endpoint. Só tem create e delete.
+4. ~~**PUT de categorias não implementado**~~ — ✅ Corrigido. Endpoint PUT adicionado em `routers/categorias.py`.
 
-5. **Deprecação Pydantic** — `app/config.py` usa `class Config:` em vez de `ConfigDict`. Gera warning no pytest. Baixa severidade.
+5. ~~**Deprecação Pydantic**~~ — ✅ Corrigido. `app/config.py` usa `ConfigDict` em vez de `class Config:`. Warning residual vem do `pydantic-settings` internamente (fora do nosso controle).
 
 6. **`descricao_banco` no model Transacao** — Campo adicional não previsto no PRD (seção 6), mas útil. Adicionado como extensão.
 
-7. **Enum StatusTransacao desalinhado com PostgreSQL** — O Python define `EXECUTADA = "Executada"` mas o PostgreSQL armazena `EXECUTADA`. Queries com `Transacao.status == StatusTransacao.EXECUTADA` podem falhar. Workaround atual: evitar filtros por status onde possível. Correção ideal: alinhar os values do enum ou gerar migration.
+7. ~~**Enum StatusTransacao desalinhado com PostgreSQL**~~ — ✅ Corrigido via `values_callable`. SQLAlchemy agora armazena os values (`Projetada`/`Executada`) e não os names (`PROJETADA`/`EXECUTADA`). ⚠️ **ATENÇÃO:** Se houver dados existentes no PostgreSQL com nomes antigos, será necessária uma migration de dados para alinhar.
+
+8. ~~**Starlette TemplateResponse deprecation**~~ — ✅ Corrigido. 20 ocorrências em 5 routers migradas de `TemplateResponse(name, {"request": request, ...})` para `TemplateResponse(request, name, context)`. Zero warnings nos testes.
 
 ---
 
@@ -171,13 +187,13 @@ TOTAL: 27 passed, 0 failed
 
 ### Prioridade Alta (corrigir o que existe)
 
-- [ ] Corrigir alinhamento do calendário (preencher dias vazios antes do dia 1 com base no weekday)
+- [x] Corrigir alinhamento do calendário (preencher dias vazios antes do dia 1 com base no weekday)
 - [ ] Gerar primeira migration Alembic (`alembic revision --autogenerate -m "initial"`)
-- [ ] Adicionar endpoint PUT `/categorias/{id}` para edição
+- [x] Adicionar endpoint PUT `/categorias/{id}` para edição
 
 ### Prioridade Média (robustez)
 
-- [ ] Testes de integração HTTP com `httpx.AsyncClient` (testar endpoints)
+- [x] Testes de integração HTTP com `httpx.AsyncClient` (testar endpoints)
 - [ ] Tratamento de erros mais robusto nos routers (try/except, mensagens amigáveis)
 - [ ] Validação de dados no frontend (HTMX + HTML5 validation)
 - [ ] Paginação na lista de transações (hoje carrega todas do mês)
@@ -271,7 +287,7 @@ uvicorn app.main:app --reload   # http://localhost:8000
 ```
 
 ### Dependências instaladas (.venv ativo)
-FastAPI 0.115, SQLAlchemy 2.0.35, asyncpg 0.29, Pydantic 2.9.2, Jinja2 3.1.4, HTMX 2.0.2 (CDN), Tailwind (CDN), Chart.js 4.4.4 (CDN), thefuzz 0.22.1, ofxparse 0.21, pytest 8.3.3
+FastAPI 0.115, SQLAlchemy 2.0.35, asyncpg 0.29, Pydantic 2.9.2, pydantic-settings 2.5.2, Jinja2 3.1.4, HTMX 2.0.2 (CDN), Tailwind (CDN), Chart.js 4.4.4 (CDN), thefuzz 0.22.1, ofxparse 0.21, pytest 8.3.3, aiosqlite 0.22.1, httpx (para testes)
 
 ---
 
@@ -298,6 +314,53 @@ FastAPI 0.115, SQLAlchemy 2.0.35, asyncpg 0.29, Pydantic 2.9.2, Jinja2 3.1.4, HT
 2. **CSV MercadoPago: formato de data errado** — `formato_data` mudou de `"%d/%m/%Y"` → `"%d-%m-%Y"` (datas com hífen). Arquivo: `services/importacao.py`.
 3. **Detecção de duplicatas não funcionava** — A query filtrava por `StatusTransacao.EXECUTADA` mas o enum Python envia `"Executada"` enquanto o PostgreSQL armazena `"EXECUTADA"`. Removido filtro por status (desnecessário) e adicionada comparação case-insensitive com `func.lower(func.trim(...))`. Arquivo: `routers/importacao.py`.
 4. **Código Python não recarregava no container** — O uvicorn rodava sem `--reload`, então o volume montado só atualizava templates (Jinja2 re-lê a cada request), mas não código Python. Adicionado `UVICORN_ARGS: "--reload"` no `docker-compose.yml`.
+
+---
+
+## 11. Changelog — Sessão 2026-03-07
+
+### 🐛 Bug Fixes
+
+1. **Calendário desalinhado** — Template `partials/calendario.html` tentava calcular weekday em Jinja2 com lógica incompleta. Corrigido: `primeiro_weekday` agora é calculado no Python (`date.weekday()`) em `routers/dashboard.py` e passado ao template que renderiza divs vazias antes do dia 1.
+
+2. **Enum desalinhado com PostgreSQL** — `StatusTransacao`, `TipoCategoria` e `NaturezaCategoria` armazenavam os names dos enums (ex: `EXECUTADA`) no banco em vez dos values (ex: `Executada`). Adicionado `values_callable=lambda x: [e.value for e in x]` nos 3 campos `Enum()` em `models/transacao.py` e `models/categoria.py`. ⚠️ Dados existentes no PostgreSQL precisam de migration de dados.
+
+3. **Deprecação Pydantic `class Config:`** — `app/config.py` migrado de `class Config: env_file = ".env"` para `model_config = ConfigDict(env_file=".env")`. Warning residual é do `pydantic-settings` internamente.
+
+4. **Deprecação Starlette TemplateResponse** — 20 ocorrências em 5 routers (`contas.py`, `dashboard.py`, `categorias.py`, `transacoes.py`, `importacao.py`) migradas de `TemplateResponse(name, {"request": request, ...})` para `TemplateResponse(request, name, context)`. 63 warnings eliminados.
+
+### ✨ Melhorias
+
+5. **Endpoint PUT `/categorias/{id}`** — Schema `CategoriaUpdate` existia mas o endpoint não. Adicionado com suporte a atualização parcial (nome, tipo, natureza).
+
+6. **Expansão massiva de testes: 27 → 138** — Criados `tests/conftest.py` (fixtures SQLite in-memory), `tests/test_api.py` (40 testes de integração HTTP), `tests/test_schemas.py` (22 testes), `tests/test_models.py` (17 testes). Expandidos `test_importacao.py` (7→21), `test_projecao.py` (9→15), `test_conciliacao.py` (11→19).
+
+7. **Convenções de desenvolvimento** — Criado `.github/copilot-instructions.md` com regras de gerenciamento de dependências, TDD, código Python, templates, Docker, e progresso.
+
+8. **`aiosqlite` no requirements.txt** — Dependência para testes com SQLite async adicionada ao `requirements.txt`.
+
+### 📁 Arquivos Alterados/Criados
+
+| Arquivo | Mudança |
+|---|---|
+| `app/templates/partials/calendario.html` | Removida lógica Jinja2 de weekday, usa `primeiro_weekday` do backend |
+| `app/routers/dashboard.py` | Calcula `primeiro_weekday` + TemplateResponse nova assinatura |
+| `app/config.py` | `class Config:` → `model_config = ConfigDict(env_file=".env")` |
+| `app/routers/categorias.py` | Novo endpoint PUT + TemplateResponse nova assinatura |
+| `app/models/transacao.py` | `values_callable` no Enum StatusTransacao |
+| `app/models/categoria.py` | `values_callable` nos Enums TipoCategoria e NaturezaCategoria |
+| `app/routers/contas.py` | TemplateResponse nova assinatura (5 ocorrências) |
+| `app/routers/transacoes.py` | TemplateResponse nova assinatura (4 ocorrências) |
+| `app/routers/importacao.py` | TemplateResponse nova assinatura (2 ocorrências) |
+| `tests/conftest.py` | **NOVO** — Fixtures SQLite in-memory + AsyncClient |
+| `tests/test_api.py` | **NOVO** — 40 testes integração HTTP |
+| `tests/test_schemas.py` | **NOVO** — 22 testes validação Pydantic |
+| `tests/test_models.py` | **NOVO** — 17 testes models |
+| `tests/test_importacao.py` | Expandido 7→21 testes |
+| `tests/test_projecao.py` | Expandido 9→15 testes |
+| `tests/test_conciliacao.py` | Expandido 11→19 testes |
+| `.github/copilot-instructions.md` | **NOVO** — Convenções de desenvolvimento |
+| `requirements.txt` | Adicionado `aiosqlite==0.22.1` |
 
 ### ✨ Melhorias
 
