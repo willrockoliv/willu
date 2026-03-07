@@ -1,12 +1,17 @@
 """
 Testes unitários para o serviço de projeção de saldo.
 Foca na lógica de cálculo de saldo dia a dia,
-incluindo geração de transações virtuais para despesas fixas e recorrentes.
+incluindo geração de transações virtuais para despesas fixas, recorrentes e variáveis.
 """
 
 import pytest
 from datetime import date, timedelta
-from app.services.projecao import calcular_projecao_sync, _add_months, _gerar_virtuais
+from app.services.projecao import (
+    calcular_projecao_sync,
+    _add_months,
+    _gerar_virtuais,
+    _calcular_media_mensal,
+)
 
 
 class TestProjecaoSaldo:
@@ -332,13 +337,31 @@ class TestProjecaoVirtuais:
         ultimo_dia = resultado[-1]
         assert ultimo_dia["saldo"] == 3800.0
 
-    def test_despesa_variavel_nao_projeta(self):
-        """Despesa variável não gera projeções futuras."""
+    def test_despesa_variavel_projeta_media(self):
+        """Despesa variável projeta média mensal da categoria para meses futuros."""
         hoje = date(2026, 3, 7)
         transacoes = [
+            # Janeiro: -150 e -250 = -400
             {
-                "data": date(2026, 3, 5),
-                "valor": -200.0,
+                "data": date(2026, 1, 5),
+                "valor": -150.0,
+                "status": "Executada",
+                "descricao": "Supermercado",
+                "categoria_id": 3,
+                "natureza": "Variável",
+            },
+            {
+                "data": date(2026, 1, 20),
+                "valor": -250.0,
+                "status": "Executada",
+                "descricao": "Supermercado",
+                "categoria_id": 3,
+                "natureza": "Variável",
+            },
+            # Fevereiro: -600
+            {
+                "data": date(2026, 2, 10),
+                "valor": -600.0,
                 "status": "Executada",
                 "descricao": "Supermercado",
                 "categoria_id": 3,
@@ -349,17 +372,15 @@ class TestProjecaoVirtuais:
             saldo_inicial=5000.0,
             transacoes=transacoes,
             data_inicio=date(2026, 3, 1),
-            data_fim=date(2026, 6, 30),
+            data_fim=date(2026, 5, 31),
             hoje=hoje,
         )
-        # Só uma movimentação no dia 5 de março
-        movs = [p for p in resultado if p["movimentacao"] != 0]
-        assert len(movs) == 1
-        assert movs[0]["data"] == "2026-03-05"
-        assert movs[0]["movimentacao"] == -200.0
-
-        # Saldo constante depois do dia 5
-        assert resultado[-1]["saldo"] == 4800.0
+        # Média mensal = (-400 + -600) / 2 = -500
+        # Projeção no dia 15 de abril e maio (março tem mês incompleto, mas
+        # a média é calculada sobre jan e fev apenas)
+        movs = {p["data"]: p["movimentacao"] for p in resultado if p["movimentacao"] != 0}
+        assert movs.get("2026-04-15") == -500.0
+        assert movs.get("2026-05-15") == -500.0
 
     def test_dedup_nao_duplica_mes_existente(self):
         """Não gera virtual para mês que já possui transação real."""
@@ -599,3 +620,273 @@ class TestProjecaoVirtuais:
         assert "(3/5)" in virtuais[0]["descricao"]
         assert "(4/5)" in virtuais[1]["descricao"]
         assert "(5/5)" in virtuais[2]["descricao"]
+
+
+class TestProjecaoEsporadica:
+    """Testes para despesas esporádicas — não devem gerar projeções."""
+
+    def test_despesa_esporadica_nao_projeta(self):
+        """Despesa esporádica não gera projeções futuras."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {
+                "data": date(2026, 3, 5),
+                "valor": -500.0,
+                "status": "Executada",
+                "descricao": "Presente aniversário",
+                "categoria_id": 20,
+                "natureza": "Esporádica",
+            },
+        ]
+        resultado = calcular_projecao_sync(
+            saldo_inicial=5000.0,
+            transacoes=transacoes,
+            data_inicio=date(2026, 3, 1),
+            data_fim=date(2026, 6, 30),
+            hoje=hoje,
+        )
+        movs = [p for p in resultado if p["movimentacao"] != 0]
+        assert len(movs) == 1
+        assert movs[0]["data"] == "2026-03-05"
+        assert resultado[-1]["saldo"] == 4500.0
+
+    def test_esporadica_nao_gera_virtuais(self):
+        """_gerar_virtuais deve retornar vazio para esporádica."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {
+                "data": date(2026, 3, 5),
+                "valor": -200.0,
+                "descricao": "Viagem",
+                "categoria_id": 21,
+                "natureza": "Esporádica",
+            },
+        ]
+        virtuais = _gerar_virtuais(transacoes, date(2026, 6, 30), hoje=hoje)
+        assert len(virtuais) == 0
+
+    def test_mix_esporadica_e_fixa(self):
+        """Esporádica não interfere na projeção de despesas fixas."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {
+                "data": date(2026, 3, 5),
+                "valor": -1500.0,
+                "status": "Executada",
+                "descricao": "Aluguel",
+                "categoria_id": 1,
+                "natureza": "Fixa",
+            },
+            {
+                "data": date(2026, 3, 10),
+                "valor": -300.0,
+                "status": "Executada",
+                "descricao": "Presente",
+                "categoria_id": 20,
+                "natureza": "Esporádica",
+            },
+        ]
+        resultado = calcular_projecao_sync(
+            saldo_inicial=10000.0,
+            transacoes=transacoes,
+            data_inicio=date(2026, 3, 1),
+            data_fim=date(2026, 5, 31),
+            hoje=hoje,
+        )
+        movs = {p["data"]: p["movimentacao"] for p in resultado if p["movimentacao"] != 0}
+        # Aluguel projeta: abril e maio
+        assert movs["2026-04-05"] == -1500.0
+        assert movs["2026-05-05"] == -1500.0
+        # Presente NÃO projeta
+        assert "2026-04-10" not in movs
+        assert "2026-05-10" not in movs
+
+
+class TestProjecaoVariavelMedia:
+    """Testes para projeção de despesas variáveis por média da categoria."""
+
+    def test_variavel_media_dois_meses(self):
+        """Média de dois meses é usada para projeção."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {
+                "data": date(2026, 1, 10),
+                "valor": -400.0,
+                "descricao": "Supermercado",
+                "categoria_id": 3,
+                "natureza": "Variável",
+            },
+            {
+                "data": date(2026, 2, 10),
+                "valor": -600.0,
+                "descricao": "Supermercado",
+                "categoria_id": 3,
+                "natureza": "Variável",
+            },
+        ]
+        virtuais = _gerar_virtuais(transacoes, date(2026, 5, 31), hoje=hoje)
+        # Média: (-400 + -600) / 2 = -500. Projeções em abril e maio (março = mês atual)
+        assert len(virtuais) == 2
+        assert all(v["valor"] == -500.0 for v in virtuais)
+        assert all(v["virtual"] is True for v in virtuais)
+        assert "média" in virtuais[0]["descricao"]
+
+    def test_variavel_so_mes_atual_usa_como_base(self):
+        """Se só há dados no mês corrente, usa esses dados como média."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {
+                "data": date(2026, 3, 2),
+                "valor": -300.0,
+                "descricao": "Alimentação",
+                "categoria_id": 5,
+                "natureza": "Variável",
+            },
+        ]
+        virtuais = _gerar_virtuais(transacoes, date(2026, 5, 31), hoje=hoje)
+        # Sem meses completos, usa o mês atual: -300
+        assert len(virtuais) == 2  # abril e maio
+        assert all(v["valor"] == -300.0 for v in virtuais)
+
+    def test_variavel_agrupa_por_categoria(self):
+        """Transações de mesma categoria com descrições diferentes são agrupadas."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {
+                "data": date(2026, 1, 5),
+                "valor": -100.0,
+                "descricao": "Uber",
+                "categoria_id": 4,
+                "natureza": "Variável",
+            },
+            {
+                "data": date(2026, 1, 15),
+                "valor": -50.0,
+                "descricao": "Gasolina",
+                "categoria_id": 4,
+                "natureza": "Variável",
+            },
+            {
+                "data": date(2026, 2, 10),
+                "valor": -200.0,
+                "descricao": "Uber",
+                "categoria_id": 4,
+                "natureza": "Variável",
+            },
+        ]
+        virtuais = _gerar_virtuais(transacoes, date(2026, 5, 31), hoje=hoje)
+        # Jan: -100 + -50 = -150. Fev: -200. Média = (-150 + -200)/2 = -175
+        # Deve gerar UMA projeção por mês (por categoria, não por descrição)
+        datas_virtuais = [v["data"] for v in virtuais]
+        meses = set((d.year, d.month) for d in datas_virtuais)
+        assert len(meses) == 2  # abril e maio
+        assert all(v["valor"] == -175.0 for v in virtuais)
+
+    def test_variavel_nao_duplica_mes_com_real(self):
+        """Variável não projeta para meses que já têm transações reais na categoria."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {
+                "data": date(2026, 1, 5),
+                "valor": -400.0,
+                "descricao": "Supermercado",
+                "categoria_id": 3,
+                "natureza": "Variável",
+            },
+            {
+                "data": date(2026, 2, 5),
+                "valor": -600.0,
+                "descricao": "Supermercado",
+                "categoria_id": 3,
+                "natureza": "Variável",
+            },
+            # Abril já tem transação real
+            {
+                "data": date(2026, 4, 5),
+                "valor": -500.0,
+                "descricao": "Supermercado",
+                "categoria_id": 3,
+                "natureza": "Variável",
+            },
+        ]
+        virtuais = _gerar_virtuais(transacoes, date(2026, 5, 31), hoje=hoje)
+        # Abril já tem real, então só projeta maio
+        datas = [v["data"] for v in virtuais]
+        meses = [(d.year, d.month) for d in datas]
+        assert (2026, 4) not in meses
+        assert (2026, 5) in meses
+
+    def test_variavel_receita_projeta_positivo(self):
+        """Receita variável (ex: freelance) projeta a média positiva."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {
+                "data": date(2026, 1, 15),
+                "valor": 2000.0,
+                "descricao": "Freelance",
+                "categoria_id": 30,
+                "natureza": "Variável",
+            },
+            {
+                "data": date(2026, 2, 15),
+                "valor": 3000.0,
+                "descricao": "Freelance",
+                "categoria_id": 30,
+                "natureza": "Variável",
+            },
+        ]
+        virtuais = _gerar_virtuais(transacoes, date(2026, 5, 31), hoje=hoje)
+        # Média = (2000 + 3000)/2 = 2500
+        assert len(virtuais) == 2
+        assert all(v["valor"] == 2500.0 for v in virtuais)
+
+
+class TestCalcularMediaMensal:
+    """Testes para _calcular_media_mensal."""
+
+    def test_media_basica(self):
+        """Média simples de dois meses."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {"data": date(2026, 1, 5), "valor": -400.0},
+            {"data": date(2026, 2, 5), "valor": -600.0},
+        ]
+        assert _calcular_media_mensal(transacoes, hoje) == -500.0
+
+    def test_media_exclui_mes_atual(self):
+        """Dados do mês corrente são excluídos por estarem incompletos."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {"data": date(2026, 1, 5), "valor": -400.0},
+            {"data": date(2026, 2, 5), "valor": -600.0},
+            {"data": date(2026, 3, 2), "valor": -100.0},  # mês atual — excluído
+        ]
+        # Média = (-400 + -600) / 2 = -500 (março descartado)
+        assert _calcular_media_mensal(transacoes, hoje) == -500.0
+
+    def test_media_somente_mes_atual_usa_fallback(self):
+        """Se só há dados do mês corrente, usa como fallback."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {"data": date(2026, 3, 2), "valor": -200.0},
+            {"data": date(2026, 3, 5), "valor": -100.0},
+        ]
+        # Fallback: (-200 + -100) / 1 mês = -300
+        assert _calcular_media_mensal(transacoes, hoje) == -300.0
+
+    def test_media_sem_transacoes(self):
+        """Sem transações retorna 0."""
+        hoje = date(2026, 3, 7)
+        assert _calcular_media_mensal([], hoje) == 0.0
+
+    def test_media_multiplas_transacoes_mesmo_mes(self):
+        """Múltiplas transações no mesmo mês são somadas antes de calcular média."""
+        hoje = date(2026, 3, 7)
+        transacoes = [
+            {"data": date(2026, 1, 5), "valor": -100.0},
+            {"data": date(2026, 1, 15), "valor": -200.0},
+            {"data": date(2026, 1, 25), "valor": -300.0},
+            {"data": date(2026, 2, 10), "valor": -400.0},
+        ]
+        # Jan: -600, Fev: -400. Média = (-600 + -400)/2 = -500
+        assert _calcular_media_mensal(transacoes, hoje) == -500.0

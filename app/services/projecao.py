@@ -1,10 +1,15 @@
 """
 Serviço de projeção de saldo dia-a-dia.
 Calcula saldo passado (real) e futuro (projetado) para o gráfico principal.
-Considera despesas fixas (repetição mensal indefinida) e recorrentes (parcelas).
+Considera:
+- Fixas: repetição mensal indefinida no mesmo dia.
+- Recorrentes: parcelas com data de início e total.
+- Variáveis: projeção baseada na média mensal histórica da categoria.
+- Esporádicas: não entram na projeção.
 """
 
 from calendar import monthrange
+from collections import defaultdict
 from datetime import date, timedelta
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,13 +37,14 @@ def _gerar_virtuais(
     Gera transações virtuais futuras com base na natureza da categoria.
 
     Cada dict em transacoes deve ter: data, valor, descricao
-    Campos opcionais: categoria_id, natureza ("Fixa"/"Recorrente"/"Variável"),
+    Campos opcionais: categoria_id, natureza ("Fixa"/"Recorrente"/"Variável"/"Esporádica"),
                       parcela_atual, total_parcelas
 
     Regras:
     - Fixa: repete mensalmente no mesmo dia, indefinidamente até data_fim.
     - Recorrente: repete com base em parcela_atual/total_parcelas.
-    - Variável: não repete.
+    - Variável: projeta usando a média mensal da categoria, distribuída no dia 15.
+    - Esporádica: não repete.
 
     Retorna lista de dicts: {data, valor, descricao, virtual: True}
     """
@@ -65,6 +71,16 @@ def _gerar_virtuais(
         key = (cat_id, t["descricao"])
         if key not in templates or t["data"] > templates[key]["data"]:
             templates[key] = t
+
+    # Para variáveis: agrupar por categoria_id todos os valores históricos
+    cat_hist: dict[int, list[dict]] = defaultdict(list)
+    for t in transacoes:
+        cat_id = t.get("categoria_id")
+        natureza = t.get("natureza")
+        if natureza and hasattr(natureza, "value"):
+            natureza = natureza.value
+        if cat_id and natureza == "Variável":
+            cat_hist[cat_id].append(t)
 
     for key, template in templates.items():
         natureza = template.get("natureza")
@@ -128,7 +144,84 @@ def _gerar_virtuais(
                         "virtual": True,
                     })
 
+        # Esporádica: não projeta (skip)
+
+    # Variáveis: projetar média mensal por categoria (não por descricao individual)
+    categorias_variaveis_processadas: set[int] = set()
+    for key, template in templates.items():
+        cat_id = key[0]
+        natureza = template.get("natureza")
+        if natureza and hasattr(natureza, "value"):
+            natureza = natureza.value
+        if natureza != "Variável" or cat_id in categorias_variaveis_processadas:
+            continue
+        categorias_variaveis_processadas.add(cat_id)
+
+        historico = cat_hist.get(cat_id, [])
+        if not historico:
+            continue
+
+        media_mensal = _calcular_media_mensal(historico, hoje)
+        if media_mensal == 0:
+            continue
+
+        # Pegar o nome da categoria a partir de qualquer transação do grupo
+        # Usar a descrição mais comum ou simplesmente a primeira
+        desc_cat = historico[0].get("descricao", "Variável")
+
+        # Coletar meses que já têm transação real nessa categoria
+        meses_cat: set[tuple[int, int]] = set()
+        for t in historico:
+            d = t["data"]
+            meses_cat.add((d.year, d.month))
+
+        # Projetar para meses futuros, no dia 15
+        mes_ref = hoje
+        for i in range(1, 121):
+            nova_data = _add_months(date(mes_ref.year, mes_ref.month, 15), i)
+            if nova_data > data_fim:
+                break
+            if nova_data <= hoje:
+                continue
+            if (nova_data.year, nova_data.month) in meses_cat:
+                continue
+
+            virtuais.append({
+                "data": nova_data,
+                "valor": round(media_mensal, 2),
+                "descricao": f"{desc_cat} (média)",
+                "virtual": True,
+            })
+
     return virtuais
+
+
+def _calcular_media_mensal(transacoes: list[dict], hoje: date) -> float:
+    """
+    Calcula a média mensal a partir das transações históricas.
+    Agrupa os valores por mês e retorna a média dos totais mensais.
+    Considera apenas meses completos (exclui o mês atual se incompleto).
+    """
+    totais_por_mes: dict[tuple[int, int], float] = defaultdict(float)
+    for t in transacoes:
+        d = t["data"]
+        totais_por_mes[(d.year, d.month)] += t["valor"]
+
+    # Remover o mês atual (pode estar incompleto)
+    totais_por_mes.pop((hoje.year, hoje.month), None)
+
+    if not totais_por_mes:
+        # Se só tem dados do mês atual, usar esse
+        totais_todos = defaultdict(float)
+        for t in transacoes:
+            d = t["data"]
+            totais_todos[(d.year, d.month)] += t["valor"]
+        if totais_todos:
+            return sum(totais_todos.values()) / len(totais_todos)
+        return 0.0
+
+    valores = list(totais_por_mes.values())
+    return sum(valores) / len(valores)
 
 
 async def calcular_projecao(

@@ -24,15 +24,18 @@ CATEGORIAS_INICIAIS = [
     ("Celular", TipoCategoria.DESPESA, NaturezaCategoria.RECORRENTE),
     ("Streaming", TipoCategoria.DESPESA, NaturezaCategoria.RECORRENTE),
     ("Academia", TipoCategoria.DESPESA, NaturezaCategoria.RECORRENTE),
-    # Despesas Variáveis
+    # Despesas Variáveis (média mensal usada na projeção)
     ("Alimentação", TipoCategoria.DESPESA, NaturezaCategoria.VARIAVEL),
     ("Supermercado", TipoCategoria.DESPESA, NaturezaCategoria.VARIAVEL),
     ("Transporte", TipoCategoria.DESPESA, NaturezaCategoria.VARIAVEL),
-    ("Lazer", TipoCategoria.DESPESA, NaturezaCategoria.VARIAVEL),
     ("Saúde", TipoCategoria.DESPESA, NaturezaCategoria.VARIAVEL),
-    ("Vestuário", TipoCategoria.DESPESA, NaturezaCategoria.VARIAVEL),
-    ("Educação", TipoCategoria.DESPESA, NaturezaCategoria.VARIAVEL),
-    ("Outros", TipoCategoria.DESPESA, NaturezaCategoria.VARIAVEL),
+    # Despesas Esporádicas (não entram na projeção)
+    ("Lazer", TipoCategoria.DESPESA, NaturezaCategoria.ESPORADICA),
+    ("Vestuário", TipoCategoria.DESPESA, NaturezaCategoria.ESPORADICA),
+    ("Educação", TipoCategoria.DESPESA, NaturezaCategoria.ESPORADICA),
+    ("Presentes", TipoCategoria.DESPESA, NaturezaCategoria.ESPORADICA),
+    ("Viagens", TipoCategoria.DESPESA, NaturezaCategoria.ESPORADICA),
+    ("Outros", TipoCategoria.DESPESA, NaturezaCategoria.ESPORADICA),
     # Receitas
     ("Salário", TipoCategoria.RECEITA, NaturezaCategoria.FIXA),
     ("Freelance", TipoCategoria.RECEITA, NaturezaCategoria.VARIAVEL),

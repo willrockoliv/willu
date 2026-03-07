@@ -128,6 +128,7 @@ class TestEnums:
         assert NaturezaCategoria.FIXA.value == "Fixa"
         assert NaturezaCategoria.RECORRENTE.value == "Recorrente"
         assert NaturezaCategoria.VARIAVEL.value == "Variável"
+        assert NaturezaCategoria.ESPORADICA.value == "Esporádica"
 
     def test_status_transacao_values(self):
         assert StatusTransacao.PROJETADA.value == "Projetada"
@@ -142,8 +143,8 @@ class TestEnums:
     def test_tipo_categoria_tem_dois_membros(self):
         assert len(TipoCategoria) == 2
 
-    def test_natureza_categoria_tem_tres_membros(self):
-        assert len(NaturezaCategoria) == 3
+    def test_natureza_categoria_tem_quatro_membros(self):
+        assert len(NaturezaCategoria) == 4
 
     def test_status_transacao_tem_dois_membros(self):
         assert len(StatusTransacao) == 2

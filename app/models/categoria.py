@@ -13,6 +13,7 @@ class NaturezaCategoria(str, enum.Enum):
     FIXA = "Fixa"
     RECORRENTE = "Recorrente"
     VARIAVEL = "Variável"
+    ESPORADICA = "Esporádica"
 
 
 class Categoria(Base):

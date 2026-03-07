@@ -1,6 +1,6 @@
 # 📋 Willu — Registro de Progresso
 
-> Última atualização: 2026-03-07 (projeção inteligente com fixas/recorrentes, selector de dias)
+> Última atualização: 2026-03-07 (projeção variáveis com média + natureza Esporádica)
 > Propósito: Servir de contexto para LLMs nas próximas iterações de desenvolvimento.
 
 ---
@@ -113,7 +113,7 @@ willu/
 | Gestão de Transações (CRUD completo)         | ✅     | `routers/transacoes.py` (7 endpoints)             |
 | Entrada Rápida (FAB global)                  | ✅     | `base.html` — botão flutuante + modal HTMX       |
 | Ciclo Projetada → Executada                  | ✅     | `models/transacao.py` (enum StatusTransacao)      |
-| Classificação (Fixa/Recorrente/Variável)     | ✅     | `models/categoria.py` (enum NaturezaCategoria)    |
+| Classificação (Fixa/Recorrente/Variável/Espor.) | ✅     | `models/categoria.py` (enum NaturezaCategoria)    |
 | Importação OFX                               | ✅     | `services/importacao.py` (ofxparse)               |
 | Importação CSV                               | ✅     | `services/importacao.py` (configurável, defaults MercadoPago) |
 | Descrição editável na conciliação            | ✅     | `partials/conciliacao_lista.html` (input + sync hidden) |
@@ -129,6 +129,8 @@ willu/
 | Projeção inteligente (fixas+recorrentes)     | ✅     | `services/projecao.py` — gera transações virtuais  |
 | Selector de dias para projeção             | ✅     | `routers/dashboard.py` + `dashboard.html`         |
 | Parcelas em transações recorrentes          | ✅     | `models/transacao.py` (parcela_atual, total_parcelas) |
+| Projeção variável por média mensal          | ✅     | `services/projecao.py` — média da categoria          |
+| Natureza Esporádica (não projeta)           | ✅     | `models/categoria.py` + `services/projecao.py`       |
 
 ---
 
@@ -137,13 +139,13 @@ willu/
 ```
 tests/test_api.py            — 40 passed ✅  (integração HTTP: contas, categorias, transações, dashboard, importação)
 tests/test_schemas.py        — 22 passed ✅  (validação Pydantic)
-tests/test_models.py         — 17 passed ✅  (valor_efetivo, repr, enums)
-tests/test_projecao.py       — 32 passed ✅  (projeção de saldo + virtuais fixas/recorrentes)
+tests/test_models.py         — 17 passed ✅  (valor_efetivo, repr, enums — inclui Esporádica)
+tests/test_projecao.py       — 45 passed ✅  (projeção saldo + virtuais fixas/recorrentes/variáveis/esporádicas + média mensal)
 tests/test_conciliacao.py    — 19 passed ✅  (motor conciliação)
 tests/test_importacao.py     — 21 passed ✅  (parser CSV/OFX)
 tests/conftest.py            — fixtures (SQLite in-memory + AsyncClient)
 =============================================
-TOTAL: 155 passed, 0 failed, 0 warnings
+TOTAL: 168 passed, 0 failed, 0 warnings
 ```
 
 ### Cobertura dos testes:
@@ -170,7 +172,7 @@ TOTAL: 155 passed, 0 failed, 0 warnings
 
 ### 🟡 Débitos Técnicos
 
-2. **Alembic sem migrações** — Infraestrutura configurada (`alembic/env.py` importa todos os models) mas nenhuma migration foi gerada. O app cria tabelas via `Base.metadata.create_all` no startup (dev mode). Precisa rodar `alembic revision --autogenerate` para produção.
+2. ~~**Alembic sem migrações**~~ — ✅ Resolvido. Migrations geradas (parcelas + enum Esporádica) e `entrypoint.sh` executa `alembic upgrade head` no startup.
 
 3. ~~**Sem testes de integração HTTP**~~ — ✅ Resolvido. 40 testes de integração HTTP via `httpx.AsyncClient` com SQLite in-memory.
 
@@ -191,7 +193,7 @@ TOTAL: 155 passed, 0 failed, 0 warnings
 ### Prioridade Alta (corrigir o que existe)
 
 - [x] Corrigir alinhamento do calendário (preencher dias vazios antes do dia 1 com base no weekday)
-- [ ] Gerar primeira migration Alembic (`alembic revision --autogenerate -m "initial"`)
+- [x] Gerar primeira migration Alembic
 - [x] Adicionar endpoint PUT `/categorias/{id}` para edição
 
 ### Prioridade Média (robustez)
@@ -236,7 +238,7 @@ SCORE_MINIMO_PALAVRAS = 50         # Score mínimo para match por palavras-chave
 ### Enums do sistema
 ```python
 TipoCategoria:    Receita | Despesa
-NaturezaCategoria: Fixa | Recorrente | Variável
+NaturezaCategoria: Fixa | Recorrente | Variável | Esporádica
 StatusTransacao:   Projetada | Executada
 ```
 
@@ -420,4 +422,43 @@ FastAPI 0.115, SQLAlchemy 2.0.35, asyncpg 0.29, Pydantic 2.9.2, pydantic-setting
 | `app/templates/dashboard.html` | Seletor de dias (30/60/90/180/365), preserva `dias_futuro` na URL |
 | `app/templates/partials/transacao_form.html` | Campos de parcela (visíveis quando categoria=Recorrente), JS toggle |
 | `tests/test_projecao.py` | 15 → 32 testes (3 classes: TestAddMonths, TestProjecaoVirtuais + existentes) |
+| `.prompts/progresso.md` | Atualizado com changelog e contagens |
+
+---
+
+## 13. Changelog — Sessão 2026-03-07 (Variáveis + Esporádica)
+
+### ✨ Features
+
+1. **Projeção de despesas variáveis por média mensal** — Categorias com natureza "Variável" (ex: Alimentação, Supermercado, Transporte) agora projetam para meses futuros usando a média dos totais mensais históricos daquela categoria. A projeção aparece no dia 15 de cada mês futuro. Meses incompletos (mês atual) são excluídos do cálculo; se só há dados do mês corrente, usa como fallback. Transações de descrições diferentes são agrupadas pela `categoria_id`.
+
+2. **Nova natureza "Esporádica"** — Adicionada ao enum `NaturezaCategoria`. Despesas esporádicas (ex: presentes, viagens, lazer) **não geram projeções futuras**. Isso separa gastos imprevisíveis/únicos (Esporádica) dos gastos variáveis mas recorrentes e previsíveis (Variável).
+
+3. **Função `_calcular_media_mensal`** — Helper que agrupa transações por (ano, mês), soma os valores de cada mês, exclui o mês corrente (incompleto), e retorna a média dos totais mensais.
+
+4. **Seed atualizado com Esporádica** — Categorias de despesa reclassificadas:
+   - **Variável** (projetável): Alimentação, Supermercado, Transporte, Saúde
+   - **Esporádica** (não projetável): Lazer, Vestuário, Educação, Presentes, Viagens, Outros
+   - Adicionadas categorias novas: "Presentes" e "Viagens" (26 categorias no seed)
+
+5. **Migration Alembic para enum** — Gerada migration que executa `ALTER TYPE naturezacategoria ADD VALUE IF NOT EXISTS 'Esporádica'` no PostgreSQL.
+
+### 📊 Testes
+
+6. **Expansão de testes de projeção: 32 → 45** — 13 novos testes:
+   - `TestProjecaoEsporadica` (3 testes): esporádica não projeta, `_gerar_virtuais` retorna vazio, mix esporádica+fixa independentes.
+   - `TestProjecaoVariavelMedia` (5 testes): média de 2 meses, fallback mês atual, agrupamento por categoria, não duplica mêses com real, receita variável positiva.
+   - `TestCalcularMediaMensal` (5 testes): média básica, exclui mês atual, fallback mês atual, sem transações, múltiplas no mesmo mês.
+   - `test_despesa_variavel_nao_projeta` → renomeado para `test_despesa_variavel_projeta_media`.
+
+### 📁 Arquivos Alterados
+
+| Arquivo | Mudança |
+|---|---|
+| `app/models/categoria.py` | `NaturezaCategoria.ESPORADICA = "Esporádica"` adicionado |
+| `app/services/projecao.py` | `_gerar_virtuais` com lógica Variável (média) e Esporádica (skip); `_calcular_media_mensal` |
+| `scripts/seed.py` | Reclassificação: Lazer/Vestuário/Educação/Outros → Esporádica; +Presentes, +Viagens |
+| `tests/test_projecao.py` | 32 → 45 testes (+3 Esporádica, +5 Variável, +5 Média) |
+| `tests/test_models.py` | Enum Esporádica no test_natureza + contagem 3→4 |
+| `alembic/versions/929353c776fe_*.py` | Migration: ALTER TYPE naturezacategoria ADD VALUE 'Esporádica' |
 | `.prompts/progresso.md` | Atualizado com changelog e contagens |
