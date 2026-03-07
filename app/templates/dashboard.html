@@ -105,11 +105,49 @@
         </div>
     </div>
 
-    <!-- Gráfico de Projeção -->
+    <!-- Projeção de Saldo -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Projeção de Saldo</h2>
-        <div class="h-80">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Projeção de Saldo</h2>
+            <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 p-0.5 bg-gray-100 dark:bg-gray-700">
+                <button
+                    id="btn-view-grafico"
+                    onclick="toggleProjecaoView('grafico')"
+                    class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
+                >
+                    <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                    </svg>
+                    Gráfico
+                </button>
+                <button
+                    id="btn-view-lista"
+                    onclick="toggleProjecaoView('lista')"
+                    class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                >
+                    <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                    </svg>
+                    Lista
+                </button>
+            </div>
+        </div>
+        <!-- Vista Gráfico -->
+        <div id="view-grafico" class="h-80">
             <canvas id="grafico-projecao"></canvas>
+        </div>
+        <!-- Vista Lista -->
+        <div id="view-lista" class="hidden"
+            hx-get="/api/projecao-lista?conta_id={{ conta_selecionada }}&dias_futuro={{ dias_futuro }}"
+            hx-trigger="projecao-lista-load"
+            hx-swap="innerHTML"
+        >
+            <div class="flex items-center justify-center py-8">
+                <svg class="animate-spin h-8 w-8 text-primary-500" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -137,6 +175,34 @@
 
 {% block scripts %}
 {% if projecao %}
+<script>
+function toggleProjecaoView(view) {
+    const graficoView = document.getElementById('view-grafico');
+    const listaView = document.getElementById('view-lista');
+    const btnGrafico = document.getElementById('btn-view-grafico');
+    const btnLista = document.getElementById('btn-view-lista');
+
+    const activeClasses = 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm';
+    const inactiveClasses = 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200';
+
+    if (view === 'lista') {
+        graficoView.classList.add('hidden');
+        listaView.classList.remove('hidden');
+        btnLista.className = 'px-3 py-1.5 text-xs font-medium rounded-md transition-colors ' + activeClasses;
+        btnGrafico.className = 'px-3 py-1.5 text-xs font-medium rounded-md transition-colors ' + inactiveClasses;
+        // Trigger HTMX load on first view
+        if (!listaView.dataset.loaded) {
+            htmx.trigger(listaView, 'projecao-lista-load');
+            listaView.dataset.loaded = 'true';
+        }
+    } else {
+        listaView.classList.add('hidden');
+        graficoView.classList.remove('hidden');
+        btnGrafico.className = 'px-3 py-1.5 text-xs font-medium rounded-md transition-colors ' + activeClasses;
+        btnLista.className = 'px-3 py-1.5 text-xs font-medium rounded-md transition-colors ' + inactiveClasses;
+    }
+}
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const dados = {{ projecao | tojson }};

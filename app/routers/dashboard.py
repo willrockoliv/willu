@@ -91,6 +91,26 @@ async def api_projecao(
     )
 
 
+@router.get("/api/projecao-lista", response_class=HTMLResponse)
+async def api_projecao_lista(
+    request: Request,
+    conta_id: int,
+    dias_futuro: int = 90,
+    db: AsyncSession = Depends(get_db),
+):
+    """Retorna o partial da lista de projeção via HTMX."""
+    hoje = date.today()
+    data_inicio = hoje - timedelta(days=30)
+    data_fim = hoje + timedelta(days=dias_futuro)
+
+    projecao = await calcular_projecao(db, conta_id, data_inicio, data_fim)
+
+    return templates.TemplateResponse(
+        request, "partials/projecao_lista.html",
+        {"projecao": projecao, "hoje": hoje},
+    )
+
+
 @router.get("/api/calendario", response_class=HTMLResponse)
 async def api_calendario(
     request: Request,
