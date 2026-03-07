@@ -34,24 +34,6 @@ cd willu
 docker compose up --build -d
 ```
 
-Isso sobe automaticamente:
-- **PostgreSQL 16** com banco `willu_financas` pronto
-- **App FastAPI** com seed de categorias e uvicorn
-
-Acesse: **http://localhost:8000**
-
-```bash
-# Verificar status
-docker compose ps
-docker compose logs app --tail 30
-
-# Parar
-docker compose down
-
-# Parar e apagar dados do banco
-docker compose down -v
-```
-
 > **WSL sem Docker Desktop:** se o daemon não estiver ativo é possível que receba a seguinte mensagem de erro:
 > ```bash
 > Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
@@ -60,6 +42,28 @@ docker compose down -v
 > ```bash
 > sudo dockerd --iptables=false &
 > ```
+
+Isso sobe automaticamente:
+- **PostgreSQL 16** com banco `willu_financas` pronto
+- **App FastAPI** com seed de categorias e uvicorn
+
+Acesse: **http://localhost:8000**
+
+Para verificar status:
+```bash
+docker compose ps
+docker compose logs app --tail 30
+```
+
+Para parar:
+```bash
+docker compose down
+```
+
+Para parar e apagar dados do banco:
+```bash
+docker compose down -v
+```
 
 ---
 
