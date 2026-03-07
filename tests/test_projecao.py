@@ -145,3 +145,91 @@ class TestProjecaoSaldo:
             data_fim=date(2026, 3, 1),
         )
         assert resultado[0]["saldo"] == 0.0
+
+
+class TestProjecaoEdgeCases:
+    """Testes de edge cases para projeção de saldo."""
+
+    def test_projecao_periodo_unico_dia(self):
+        """Período de 1 dia deve retornar exatamente 1 registro."""
+        resultado = calcular_projecao_sync(
+            saldo_inicial=500.0,
+            transacoes=[],
+            data_inicio=date(2026, 3, 15),
+            data_fim=date(2026, 3, 15),
+        )
+        assert len(resultado) == 1
+        assert resultado[0]["saldo"] == 500.0
+        assert resultado[0]["data"] == "2026-03-15"
+
+    def test_projecao_saldo_zero(self):
+        """Saldo zero é válido e deve ser exibido."""
+        transacoes = [
+            {"data": date(2026, 3, 1), "valor": -1000.0, "status": "Projetada", "descricao": "Tudo"},
+        ]
+        resultado = calcular_projecao_sync(
+            saldo_inicial=1000.0,
+            transacoes=transacoes,
+            data_inicio=date(2026, 3, 1),
+            data_fim=date(2026, 3, 1),
+        )
+        assert resultado[0]["saldo"] == 0.0
+        assert resultado[0]["movimentacao"] == -1000.0
+
+    def test_projecao_transacoes_antes_e_durante_periodo(self):
+        """Mix de transações antes e durante o período."""
+        transacoes = [
+            {"data": date(2026, 2, 1), "valor": -200.0, "status": "Executada", "descricao": "Antes 1"},
+            {"data": date(2026, 2, 15), "valor": -300.0, "status": "Executada", "descricao": "Antes 2"},
+            {"data": date(2026, 3, 1), "valor": -100.0, "status": "Projetada", "descricao": "Durante"},
+        ]
+        resultado = calcular_projecao_sync(
+            saldo_inicial=1000.0,
+            transacoes=transacoes,
+            data_inicio=date(2026, 3, 1),
+            data_fim=date(2026, 3, 2),
+        )
+        # 1000 - 200 - 300 = 500 (antes do período)
+        # 500 - 100 = 400 (dia 1)
+        assert resultado[0]["saldo"] == 400.0
+        assert resultado[1]["saldo"] == 400.0
+
+    def test_projecao_valores_grandes(self):
+        """Deve lidar com valores altos sem problemas de precisão."""
+        transacoes = [
+            {"data": date(2026, 3, 1), "valor": 1000000.00, "status": "Projetada", "descricao": "Prêmio"},
+        ]
+        resultado = calcular_projecao_sync(
+            saldo_inicial=500000.50,
+            transacoes=transacoes,
+            data_inicio=date(2026, 3, 1),
+            data_fim=date(2026, 3, 1),
+        )
+        assert resultado[0]["saldo"] == 1500000.50
+
+    def test_projecao_saldo_inicial_negativo(self):
+        """Conta com saldo inicial negativo (cheque especial)."""
+        resultado = calcular_projecao_sync(
+            saldo_inicial=-500.0,
+            transacoes=[],
+            data_inicio=date(2026, 3, 1),
+            data_fim=date(2026, 3, 3),
+        )
+        assert resultado[0]["saldo"] == -500.0
+        assert resultado[1]["saldo"] == -500.0
+        assert resultado[2]["saldo"] == -500.0
+
+    def test_projecao_movimentacao_zero_dia_sem_transacoes(self):
+        """Dias sem transações devem ter movimentação zero."""
+        transacoes = [
+            {"data": date(2026, 3, 2), "valor": -100.0, "status": "Projetada", "descricao": "Dia 2"},
+        ]
+        resultado = calcular_projecao_sync(
+            saldo_inicial=1000.0,
+            transacoes=transacoes,
+            data_inicio=date(2026, 3, 1),
+            data_fim=date(2026, 3, 3),
+        )
+        assert resultado[0]["movimentacao"] == 0.0
+        assert resultado[1]["movimentacao"] == -100.0
+        assert resultado[2]["movimentacao"] == 0.0

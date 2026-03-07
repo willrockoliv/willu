@@ -206,3 +206,117 @@ class TestConciliacaoPrioridade:
         assert resultado.transacao_id is None
         assert resultado.categoria_id is None
         assert resultado.score == 0.0
+
+
+class TestConciliacaoEdgeCases:
+    """Testes de edge cases para o motor de conciliação."""
+
+    def test_dicionario_com_whitespace(self):
+        """Descrição com espaços deve ser tratada (strip)."""
+        linha = LinhaExtrato(data=date(2026, 3, 5), descricao="  PGTO ALUGUEL  ", valor=-1500.0)
+        dicionario = {
+            "PGTO ALUGUEL": {
+                "categoria_id": 1,
+                "categoria_nome": "Aluguel",
+                "descricao_padrao": "Aluguel",
+            }
+        }
+        resultado = conciliar_linha_sync(linha, [], dicionario, [])
+
+        assert resultado.origem == "dicionario"
+        assert resultado.score == 100.0
+
+    def test_fuzzy_com_valor_previsto_zero(self):
+        """Transação com valor_previsto=0 não deve causar divisão por zero."""
+        linha = LinhaExtrato(data=date(2026, 3, 5), descricao="AJUSTE", valor=-10.0)
+        transacoes = [
+            {
+                "id": 50,
+                "descricao": "Ajuste",
+                "valor_previsto": 0.0,
+                "data_vencimento": date(2026, 3, 5),
+                "categoria_id": 1,
+                "categoria_nome": "Ajuste",
+            }
+        ]
+        # Não deve levantar exceção
+        resultado = conciliar_linha_sync(linha, transacoes, {}, [])
+        # Score de valor será 0, mas data (30) + texto podem somar
+        assert resultado is not None
+
+    def test_fuzzy_score_maximo_com_match_perfeito(self):
+        """Match perfeito (valor exato + data exata + texto idêntico) deve ter score alto."""
+        linha = LinhaExtrato(data=date(2026, 3, 5), descricao="Aluguel", valor=-1500.0)
+        transacoes = [
+            {
+                "id": 10,
+                "descricao": "Aluguel",
+                "valor_previsto": -1500.0,
+                "data_vencimento": date(2026, 3, 5),
+                "categoria_id": 1,
+                "categoria_nome": "Aluguel",
+            }
+        ]
+        resultado = conciliar_linha_sync(linha, transacoes, {}, [])
+
+        assert resultado.origem == "fuzzy"
+        # Score perfeito: valor(50) + data(30) + texto(20) = 100
+        assert resultado.score == 100.0
+
+    def test_fuzzy_nao_matcha_fora_janela_dias(self):
+        """Transação fora da janela de ±3 dias não deve ser candidata."""
+        linha = LinhaExtrato(data=date(2026, 3, 10), descricao="ALUGUEL", valor=-1500.0)
+        transacoes = [
+            {
+                "id": 10,
+                "descricao": "Aluguel",
+                "valor_previsto": -1500.0,
+                "data_vencimento": date(2026, 3, 1),  # 9 dias de diferença
+                "categoria_id": 1,
+                "categoria_nome": "Aluguel",
+            }
+        ]
+        resultado = conciliar_linha_sync(linha, transacoes, {}, [])
+        assert resultado.origem != "fuzzy"
+
+    def test_palavras_chave_case_insensitive(self):
+        """Match por palavras-chave deve ser case-insensitive."""
+        linha = LinhaExtrato(data=date(2026, 3, 5), descricao="supermercado carrefour", valor=-350.0)
+        categorias = [
+            {"id": 14, "nome": "SUPERMERCADO"},
+        ]
+        resultado = conciliar_linha_sync(linha, [], {}, categorias)
+
+        assert resultado.origem == "palavras_chave"
+        assert resultado.categoria_id == 14
+
+    def test_linha_extrato_preservada_no_resultado(self):
+        """A linha de extrato original deve ser preservada no resultado."""
+        linha = LinhaExtrato(data=date(2026, 3, 5), descricao="COMPRA PIX", valor=-99.90)
+        resultado = conciliar_linha_sync(linha, [], {}, [])
+
+        assert resultado.linha_extrato.data == date(2026, 3, 5)
+        assert resultado.linha_extrato.descricao == "COMPRA PIX"
+        assert resultado.linha_extrato.valor == -99.90
+
+    def test_fuzzy_prioridade_sobre_palavras_chave(self):
+        """Fuzzy match deve ter prioridade sobre palavras-chave."""
+        linha = LinhaExtrato(data=date(2026, 3, 5), descricao="ENERGIA ELETRICA", valor=-150.0)
+        transacoes = [
+            {
+                "id": 20,
+                "descricao": "Energia Elétrica",
+                "valor_previsto": -150.0,
+                "data_vencimento": date(2026, 3, 5),
+                "categoria_id": 7,
+                "categoria_nome": "Energia Elétrica",
+            }
+        ]
+        categorias = [
+            {"id": 7, "nome": "Energia Elétrica"},
+        ]
+        resultado = conciliar_linha_sync(linha, transacoes, {}, categorias)
+
+        # Fuzzy tem prioridade sobre palavras-chave
+        assert resultado.origem == "fuzzy"
+        assert resultado.transacao_id == 20
