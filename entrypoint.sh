@@ -22,6 +22,9 @@ except Exception:
 done
 echo "✅ PostgreSQL disponível!"
 
+echo "📦 Rodando migrations..."
+alembic upgrade head
+
 echo "🌱 Rodando seed de categorias..."
 python -m scripts.seed
 

@@ -31,6 +31,8 @@ services:
       UVICORN_ARGS: "--reload"
     volumes:
       - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
     depends_on:
       db:
         condition: service_healthy
