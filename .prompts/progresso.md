@@ -1,6 +1,6 @@
 # 📋 Willu — Registro de Progresso
 
-> Última atualização: 2026-03-07 (correção de bugs, débitos técnicos, expansão de testes)
+> Última atualização: 2026-03-07 (projeção inteligente com fixas/recorrentes, selector de dias)
 > Propósito: Servir de contexto para LLMs nas próximas iterações de desenvolvimento.
 
 ---
@@ -125,7 +125,10 @@ willu/
 | CRUD Contas                                  | ✅     | `routers/contas.py` (5 endpoints)                 |
 | CRUD Categorias                              | ✅     | `routers/categorias.py` (6 endpoints: CRUD + PUT + options) |
 | Seed de categorias iniciais (24)             | ✅     | `scripts/seed.py`                                 |
-| Testes unitários + integração                | ✅     | 138/138 passando, 0 warnings                     |
+| Testes unitários + integração                | ✅     | 155/155 passando, 0 warnings                     |
+| Projeção inteligente (fixas+recorrentes)     | ✅     | `services/projecao.py` — gera transações virtuais  |
+| Selector de dias para projeção             | ✅     | `routers/dashboard.py` + `dashboard.html`         |
+| Parcelas em transações recorrentes          | ✅     | `models/transacao.py` (parcela_atual, total_parcelas) |
 
 ---
 
@@ -135,12 +138,12 @@ willu/
 tests/test_api.py            — 40 passed ✅  (integração HTTP: contas, categorias, transações, dashboard, importação)
 tests/test_schemas.py        — 22 passed ✅  (validação Pydantic)
 tests/test_models.py         — 17 passed ✅  (valor_efetivo, repr, enums)
-tests/test_projecao.py       — 15 passed ✅  (projeção de saldo)
+tests/test_projecao.py       — 32 passed ✅  (projeção de saldo + virtuais fixas/recorrentes)
 tests/test_conciliacao.py    — 19 passed ✅  (motor conciliação)
 tests/test_importacao.py     — 21 passed ✅  (parser CSV/OFX)
 tests/conftest.py            — fixtures (SQLite in-memory + AsyncClient)
 =============================================
-TOTAL: 138 passed, 0 failed, 0 warnings
+TOTAL: 155 passed, 0 failed, 0 warnings
 ```
 
 ### Cobertura dos testes:
@@ -151,7 +154,7 @@ TOTAL: 138 passed, 0 failed, 0 warnings
 
 **Models:** valor_efetivo (executada com/sem realizado, projetada, zero, receita), repr dos 4 models, enums (values, tipo string, contagem membros).
 
-**Projeção:** sem transações, com despesa, com receita, múltiplas no mesmo dia, saldo negativo, tipo real/projetado, movimentação diária, acumulação antes do período, arredondamento 2 casas, período único dia, saldo zero, transações antes+durante, valores grandes, saldo inicial negativo, movimentação zero.
+**Projeção:** sem transações, com despesa, com receita, múltiplas no mesmo dia, saldo negativo, tipo real/projetado, movimentação diária, acumulação antes do período, arredondamento 2 casas, período único dia, saldo zero, transações antes+durante, valores grandes, saldo inicial negativo, movimentação zero, **despesa fixa projeta meses futuros, recorrente projeta parcelas, variável não projeta, dedup mes existente, sem categoria não projeta, recorrente sem parcelas, última parcela, ajuste dia mês curto, múltiplas fixas independentes, receita fixa positiva, _gerar_virtuais isolado, descrição parcela, _add_months (básico, fim mês curto, bissexto, virada ano, múltiplos)**.
 
 **Conciliação:** match dicionário (exato + sem), fuzzy (valor+data exatos, tolerância data ±3d, tolerância valor ±5%, fora tolerância, melhor candidato), palavras-chave (match + sem), prioridade dicionário > fuzzy, transação nova, edge cases (whitespace, valor zero, match perfeito, janela dias, case insensitive, preservação, prioridade fuzzy > keywords).
 
@@ -206,7 +209,7 @@ TOTAL: 138 passed, 0 failed, 0 warnings
 
 ### Nice to Have (melhorias UX)
 
-- [ ] Recorrência automática de transações (gerar projetadas futuras)
+- [x] Recorrência automática de transações (gerar projetadas futuras)
 - [ ] Dark mode
 - [ ] Busca/filtro por descrição nas transações
 - [ ] Confirmação visual mais clara no calendário (tooltip com detalhes)
@@ -377,3 +380,44 @@ FastAPI 0.115, SQLAlchemy 2.0.35, asyncpg 0.29, Pydantic 2.9.2, pydantic-setting
 | `schemas/conciliacao.py` | Campo `duplicada: bool = False` em `SugestaoConciliacao` |
 | `routers/importacao.py` | Lógica de detecção de duplicatas (query sem filtro de status, case-insensitive) |
 | `templates/partials/conciliacao_lista.html` | Input editável para descrição + UI de duplicatas (badge + botão excluir) |
+
+---
+
+## 12. Changelog — Sessão 2026-03-07 (Projeção Inteligente)
+
+### ✨ Features
+
+1. **Projeção inteligente de saldo com despesas fixas e recorrentes** — O serviço `services/projecao.py` agora gera transações virtuais futuras:
+   - **Despesas Fixas (natureza=Fixa):** repetem mensalmente no mesmo dia do mês, indefinidamente, até o fim do período de projeção. Ex: Aluguel dia 5 → projeta dia 5 de cada mês futuro.
+   - **Despesas Recorrentes (natureza=Recorrente):** usam `parcela_atual` e `total_parcelas` para calcular quantas parcelas restam e projetá-las mensalmente. Ex: Notebook parcela 3/12 → projeta parcelas 4 a 12.
+   - **Despesas Variáveis:** não geram projeções, aparecem apenas quando lançadas.
+   - **Dedup:** não duplica meses que já possuem transação real para a mesma (categoria_id, descricao).
+   - Ajuste automático para meses mais curtos (ex: dia 31 → dia 28 em fevereiro).
+
+2. **Seletor de dias para projeção** — O dashboard agora permite escolher o horizonte de projeção: 30, 60, 90, 180 dias ou 1 ano. Parâmetro `dias_futuro` substitui o antigo `meses`.
+
+3. **Campos de parcela no model Transacao** — Adicionados `parcela_atual` e `total_parcelas` (ambos opcionais) ao model, schemas e formulário de transação. O form exibe os campos de parcela apenas quando a categoria selecionada é "Recorrente".
+
+4. **Função `_add_months`** — Helper para adicionar N meses a uma data com ajuste automático do dia para meses mais curtos (ex: Jan 31 + 1 mês = Feb 28).
+
+5. **Função `_gerar_virtuais`** — Core da lógica de projeção. Recebe transações reais e gera virtuais futuros baseados na natureza da categoria. Usado tanto pela versão async quanto pela sync.
+
+### 📊 Testes
+
+6. **Expansão de testes de projeção: 15 → 32** — 17 novos testes cobrindo:
+   - `TestAddMonths` (5 testes): básico, fim mês curto, ano bissexto, virada de ano, múltiplos meses.
+   - `TestProjecaoVirtuais` (12 testes): fixa projeta futuros, recorrente projeta parcelas, variável não projeta, dedup mês existente, sem categoria, recorrente sem parcelas, última parcela, ajuste dia mês curto, múltiplas fixas independentes, receita fixa positiva, `_gerar_virtuais` isolado, descrição com número de parcela.
+
+### 📁 Arquivos Alterados
+
+| Arquivo | Mudança |
+|---|---|
+| `app/models/transacao.py` | Adicionados `parcela_atual: int \| None` e `total_parcelas: int \| None` |
+| `app/schemas/transacao.py` | Campos `parcela_atual` e `total_parcelas` em Create/Update/Read |
+| `app/services/projecao.py` | Reescrito: `_add_months`, `_gerar_virtuais`, projeção com virtuais, `selectinload(categoria)` |
+| `app/routers/dashboard.py` | `meses` → `dias_futuro`, passa `dias_futuro` ao template |
+| `app/routers/transacoes.py` | Criação e atualização de transações com campos de parcela |
+| `app/templates/dashboard.html` | Seletor de dias (30/60/90/180/365), preserva `dias_futuro` na URL |
+| `app/templates/partials/transacao_form.html` | Campos de parcela (visíveis quando categoria=Recorrente), JS toggle |
+| `tests/test_projecao.py` | 15 → 32 testes (3 classes: TestAddMonths, TestProjecaoVirtuais + existentes) |
+| `.prompts/progresso.md` | Atualizado com changelog e contagens |

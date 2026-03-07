@@ -13,6 +13,8 @@ class TransacaoCreate(BaseModel):
     status: StatusTransacao = StatusTransacao.PROJETADA
     descricao: str
     descricao_banco: str | None = None
+    parcela_atual: int | None = None
+    total_parcelas: int | None = None
 
 
 class TransacaoUpdate(BaseModel):
@@ -25,6 +27,8 @@ class TransacaoUpdate(BaseModel):
     status: StatusTransacao | None = None
     descricao: str | None = None
     descricao_banco: str | None = None
+    parcela_atual: int | None = None
+    total_parcelas: int | None = None
 
 
 class TransacaoRead(BaseModel):
@@ -38,5 +42,7 @@ class TransacaoRead(BaseModel):
     status: StatusTransacao
     descricao: str
     descricao_banco: str | None
+    parcela_atual: int | None = None
+    total_parcelas: int | None = None
 
     model_config = {"from_attributes": True}

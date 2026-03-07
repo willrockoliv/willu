@@ -156,6 +156,9 @@ async def criar_transacao(request: Request, db: AsyncSession = Depends(get_db)):
 
     status = form.get("status", StatusTransacao.PROJETADA)
 
+    parcela_atual_str = (form.get("parcela_atual") or "").strip()
+    total_parcelas_str = (form.get("total_parcelas") or "").strip()
+
     transacao = Transacao(
         conta_id=int(form.get("conta_id")),
         categoria_id=int(form.get("categoria_id")) if form.get("categoria_id") else None,
@@ -165,6 +168,8 @@ async def criar_transacao(request: Request, db: AsyncSession = Depends(get_db)):
         data_pagamento=date.fromisoformat(form.get("data_pagamento")) if form.get("data_pagamento") else None,
         status=status,
         descricao=form.get("descricao", ""),
+        parcela_atual=int(parcela_atual_str) if parcela_atual_str else None,
+        total_parcelas=int(total_parcelas_str) if total_parcelas_str else None,
     )
     db.add(transacao)
     await db.flush()
@@ -203,6 +208,11 @@ async def atualizar_transacao(
         transacao.data_pagamento = date.fromisoformat(form["data_pagamento"])
     if form.get("valor_realizado"):
         transacao.valor_realizado = float(form["valor_realizado"])
+
+    parcela_atual_str = (form.get("parcela_atual") or "").strip()
+    transacao.parcela_atual = int(parcela_atual_str) if parcela_atual_str else None
+    total_parcelas_str = (form.get("total_parcelas") or "").strip()
+    transacao.total_parcelas = int(total_parcelas_str) if total_parcelas_str else None
 
     await db.flush()
 

@@ -10,18 +10,31 @@
             <p class="text-sm text-gray-500 mt-1">Projeção do seu fluxo de caixa</p>
         </div>
         {% if contas %}
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
             <label class="text-sm font-medium text-gray-700">Conta:</label>
             <select
                 id="conta-select"
                 class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
-                onchange="window.location.href='/?conta_id=' + this.value"
+                onchange="window.location.href='/?conta_id=' + this.value + '&dias_futuro={{ dias_futuro }}'" 
             >
                 {% for conta in contas %}
                 <option value="{{ conta.id }}" {% if conta.id == conta_selecionada %}selected{% endif %}>
                     {{ conta.nome }}
                 </option>
                 {% endfor %}
+            </select>
+
+            <label class="text-sm font-medium text-gray-700 ml-4">Projetar:</label>
+            <select
+                id="dias-select"
+                class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                onchange="window.location.href='/?conta_id={{ conta_selecionada }}&dias_futuro=' + this.value"
+            >
+                <option value="30" {% if dias_futuro == 30 %}selected{% endif %}>30 dias</option>
+                <option value="60" {% if dias_futuro == 60 %}selected{% endif %}>60 dias</option>
+                <option value="90" {% if dias_futuro == 90 %}selected{% endif %}>90 dias</option>
+                <option value="180" {% if dias_futuro == 180 %}selected{% endif %}>180 dias</option>
+                <option value="365" {% if dias_futuro == 365 %}selected{% endif %}>1 ano</option>
             </select>
         </div>
         {% endif %}

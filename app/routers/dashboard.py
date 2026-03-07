@@ -18,7 +18,7 @@ templates = Jinja2Templates(directory="app/templates")
 async def dashboard(
     request: Request,
     conta_id: int | None = None,
-    meses: int = 3,
+    dias_futuro: int = 90,
     db: AsyncSession = Depends(get_db),
 ):
     """Página principal com o dashboard de projeção."""
@@ -30,15 +30,15 @@ async def dashboard(
     if not contas:
         return templates.TemplateResponse(
             request, "dashboard.html",
-            {"contas": [], "projecao": [], "conta_selecionada": None, "hoje": date.today()},
+            {"contas": [], "projecao": [], "conta_selecionada": None, "hoje": date.today(), "dias_futuro": dias_futuro},
         )
 
     conta_selecionada = conta_id or (contas[0].id if contas else None)
 
-    # Calcular projeção: 30 dias atrás até X meses à frente
+    # Calcular projeção: 30 dias atrás até X dias à frente
     hoje = date.today()
     data_inicio = hoje - timedelta(days=30)
-    data_fim = hoje + timedelta(days=30 * meses)
+    data_fim = hoje + timedelta(days=dias_futuro)
 
     projecao = await calcular_projecao(db, conta_selecionada, data_inicio, data_fim)
 
@@ -66,6 +66,7 @@ async def dashboard(
             "saldo_fim_mes": saldo_fim_mes,
             "dias_negativos": len(dias_negativos),
             "hoje": hoje,
+            "dias_futuro": dias_futuro,
         },
     )
 
@@ -74,13 +75,13 @@ async def dashboard(
 async def api_projecao(
     request: Request,
     conta_id: int,
-    meses: int = 3,
+    dias_futuro: int = 90,
     db: AsyncSession = Depends(get_db),
 ):
     """Retorna o partial do gráfico via HTMX."""
     hoje = date.today()
     data_inicio = hoje - timedelta(days=30)
-    data_fim = hoje + timedelta(days=30 * meses)
+    data_fim = hoje + timedelta(days=dias_futuro)
 
     projecao = await calcular_projecao(db, conta_id, data_inicio, data_fim)
 

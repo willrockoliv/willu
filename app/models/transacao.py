@@ -26,6 +26,8 @@ class Transacao(Base):
     )
     descricao: Mapped[str] = mapped_column(String(255), nullable=False)
     descricao_banco: Mapped[str | None] = mapped_column(Text, nullable=True)
+    parcela_atual: Mapped[int | None] = mapped_column(nullable=True)
+    total_parcelas: Mapped[int | None] = mapped_column(nullable=True)
 
     conta: Mapped["Conta"] = relationship(back_populates="transacoes")  # noqa: F821
     categoria: Mapped["Categoria"] = relationship(back_populates="transacoes")  # noqa: F821
