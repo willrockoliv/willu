@@ -52,7 +52,11 @@ docker compose down
 docker compose down -v
 ```
 
-> **WSL sem Docker Desktop:** se o daemon não estiver ativo, inicie manualmente:
+> **WSL sem Docker Desktop:** se o daemon não estiver ativo é possível que receba a seguinte mensagem de erro:
+> ```bash
+> Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+> ```
+> Caso isso ocorra, inicie-o manualmente:
 > ```bash
 > sudo dockerd --iptables=false &
 > ```
