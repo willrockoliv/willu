@@ -22,10 +22,6 @@ venv/
 # Pytest
 .pytest_cache/
 
-# Alembic auto-generated (versionadas individualmente)
-alembic/versions/*.py
-!alembic/versions/.gitkeep
-
 # Docker
 /tmp/dockerd.log
 
