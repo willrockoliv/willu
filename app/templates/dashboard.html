@@ -10,12 +10,13 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Projeção do seu fluxo de caixa</p>
         </div>
         {% if contas %}
-        <div class="flex items-center gap-3 flex-wrap">
+        <form id="dashboard-filters" action="/" method="get" class="flex items-center gap-3 flex-wrap">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Conta:</label>
             <select
                 id="conta-select"
+                name="conta_id"
                 class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
-                onchange="window.location.href='/?conta_id=' + this.value + '&dias_futuro={{ dias_futuro }}'" 
+                onchange="this.form.submit()"
             >
                 {% for conta in contas %}
                 <option value="{{ conta.id }}" {% if conta.id == conta_selecionada %}selected{% endif %}>
@@ -24,11 +25,25 @@
                 {% endfor %}
             </select>
 
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 ml-4">Projetar:</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 ml-2">De:</label>
+            <input type="date" name="data_inicio" id="data-inicio"
+                value="{{ data_inicio }}"
+                class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                onchange="this.form.submit()"
+            >
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Até:</label>
+            <input type="date" name="data_fim" id="data-fim"
+                value="{{ data_fim }}"
+                class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                onchange="this.form.submit()"
+            >
+
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 ml-2">Projetar:</label>
             <select
                 id="dias-select"
+                name="dias_futuro"
                 class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
-                onchange="window.location.href='/?conta_id={{ conta_selecionada }}&dias_futuro=' + this.value"
+                onchange="aplicarProjecaoDias(this.value)"
             >
                 <option value="30" {% if dias_futuro == 30 %}selected{% endif %}>30 dias</option>
                 <option value="60" {% if dias_futuro == 60 %}selected{% endif %}>60 dias</option>
@@ -36,7 +51,19 @@
                 <option value="180" {% if dias_futuro == 180 %}selected{% endif %}>180 dias</option>
                 <option value="365" {% if dias_futuro == 365 %}selected{% endif %}>1 ano</option>
             </select>
-        </div>
+        </form>
+        <script>
+        function aplicarProjecaoDias(dias) {
+            const hoje = new Date();
+            const inicio = new Date(hoje);
+            inicio.setDate(inicio.getDate() - 30);
+            const fim = new Date(hoje);
+            fim.setDate(fim.getDate() + parseInt(dias));
+            document.getElementById('data-inicio').value = inicio.toISOString().slice(0, 10);
+            document.getElementById('data-fim').value = fim.toISOString().slice(0, 10);
+            document.getElementById('dashboard-filters').submit();
+        }
+        </script>
         {% endif %}
     </div>
 
@@ -138,7 +165,7 @@
         </div>
         <!-- Vista Lista -->
         <div id="view-lista" class="hidden"
-            hx-get="/api/projecao-lista?conta_id={{ conta_selecionada }}&dias_futuro={{ dias_futuro }}"
+            hx-get="/api/projecao-lista?conta_id={{ conta_selecionada }}&dias_futuro={{ dias_futuro }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}"
             hx-trigger="projecao-lista-load"
             hx-swap="innerHTML"
         >
@@ -204,7 +231,19 @@ function toggleProjecaoView(view) {
 }
 </script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// Variável global para rastrear o chart e poder destruí-lo
+window.__willuProjecaoChart = window.__willuProjecaoChart || null;
+
+function initProjecaoChart() {
+    const canvas = document.getElementById('grafico-projecao');
+    if (!canvas) return;
+
+    // Destruir chart anterior se existir
+    if (window.__willuProjecaoChart) {
+        window.__willuProjecaoChart.destroy();
+        window.__willuProjecaoChart = null;
+    }
+
     const dados = {{ projecao | tojson }};
     const hoje = '{{ hoje.isoformat() }}';
 
@@ -221,8 +260,8 @@ document.addEventListener('DOMContentLoaded', function() {
         dadosFuturo[idxHoje] = dados[idxHoje].saldo;
     }
 
-    const ctx = document.getElementById('grafico-projecao').getContext('2d');
-    new Chart(ctx, {
+    const ctx = canvas.getContext('2d');
+    window.__willuProjecaoChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -299,6 +338,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+}
+
+// Inicializar no carregamento normal da página
+document.addEventListener('DOMContentLoaded', initProjecaoChart);
+
+// Reinicializar quando HTMX faz boost navigation (troca de página via hx-boost)
+document.addEventListener('htmx:afterSettle', function(event) {
+    // Só reinicializar se o canvas do gráfico estiver presente no conteúdo carregado
+    if (document.getElementById('grafico-projecao')) {
+        // Pequeno delay para garantir que o canvas está renderizado no DOM
+        setTimeout(initProjecaoChart, 50);
+    }
 });
 </script>
 {% endif %}

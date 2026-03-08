@@ -19,6 +19,8 @@ async def dashboard(
     request: Request,
     conta_id: int | None = None,
     dias_futuro: int = 90,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     """Página principal com o dashboard de projeção."""
@@ -30,17 +32,26 @@ async def dashboard(
     if not contas:
         return templates.TemplateResponse(
             request, "dashboard.html",
-            {"contas": [], "projecao": [], "conta_selecionada": None, "hoje": date.today(), "dias_futuro": dias_futuro},
+            {"contas": [], "projecao": [], "conta_selecionada": None, "hoje": date.today(), "dias_futuro": dias_futuro,
+             "data_inicio": "", "data_fim": ""},
         )
 
     conta_selecionada = conta_id or (contas[0].id if contas else None)
 
-    # Calcular projeção: 30 dias atrás até X dias à frente
     hoje = date.today()
-    data_inicio = hoje - timedelta(days=30)
-    data_fim = hoje + timedelta(days=dias_futuro)
 
-    projecao = await calcular_projecao(db, conta_selecionada, data_inicio, data_fim)
+    # Período: usar parâmetros de filtro se fornecidos, senão padrão
+    if data_inicio:
+        dt_inicio = date.fromisoformat(data_inicio)
+    else:
+        dt_inicio = hoje - timedelta(days=30)
+
+    if data_fim:
+        dt_fim = date.fromisoformat(data_fim)
+    else:
+        dt_fim = hoje + timedelta(days=dias_futuro)
+
+    projecao = await calcular_projecao(db, conta_selecionada, dt_inicio, dt_fim)
 
     # Resumo para cards
     saldo_atual = 0.0
@@ -67,6 +78,8 @@ async def dashboard(
             "dias_negativos": len(dias_negativos),
             "hoje": hoje,
             "dias_futuro": dias_futuro,
+            "data_inicio": dt_inicio.isoformat(),
+            "data_fim": dt_fim.isoformat(),
         },
     )
 
@@ -76,14 +89,16 @@ async def api_projecao(
     request: Request,
     conta_id: int,
     dias_futuro: int = 90,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     """Retorna o partial do gráfico via HTMX."""
     hoje = date.today()
-    data_inicio = hoje - timedelta(days=30)
-    data_fim = hoje + timedelta(days=dias_futuro)
+    dt_inicio = date.fromisoformat(data_inicio) if data_inicio else hoje - timedelta(days=30)
+    dt_fim = date.fromisoformat(data_fim) if data_fim else hoje + timedelta(days=dias_futuro)
 
-    projecao = await calcular_projecao(db, conta_id, data_inicio, data_fim)
+    projecao = await calcular_projecao(db, conta_id, dt_inicio, dt_fim)
 
     return templates.TemplateResponse(
         request, "partials/grafico.html",
@@ -96,14 +111,16 @@ async def api_projecao_lista(
     request: Request,
     conta_id: int,
     dias_futuro: int = 90,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     """Retorna o partial da lista de projeção via HTMX."""
     hoje = date.today()
-    data_inicio = hoje - timedelta(days=30)
-    data_fim = hoje + timedelta(days=dias_futuro)
+    dt_inicio = date.fromisoformat(data_inicio) if data_inicio else hoje - timedelta(days=30)
+    dt_fim = date.fromisoformat(data_fim) if data_fim else hoje + timedelta(days=dias_futuro)
 
-    projecao = await calcular_projecao(db, conta_id, data_inicio, data_fim)
+    projecao = await calcular_projecao(db, conta_id, dt_inicio, dt_fim)
 
     return templates.TemplateResponse(
         request, "partials/projecao_lista.html",
