@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.transacao import Transacao, StatusTransacao
 from app.models.conta import Conta
-from app.models.categoria import Categoria
+from app.models.categoria import Categoria, NaturezaCategoria
 from app.schemas.transacao import TransacaoCreate
 
 router = APIRouter(prefix="/transacoes", tags=["Transações"])
@@ -20,6 +20,7 @@ async def listar_transacoes(
     request: Request,
     conta_id: int | None = None,
     status: str | None = None,
+    natureza: str | None = None,
     mes: int | None = None,
     ano: int | None = None,
     db: AsyncSession = Depends(get_db),
@@ -34,6 +35,10 @@ async def listar_transacoes(
         query = query.where(Transacao.conta_id == conta_id)
     if status:
         query = query.where(Transacao.status == status)
+    if natureza:
+        query = query.join(Categoria, Transacao.categoria_id == Categoria.id).where(
+            Categoria.natureza == natureza
+        )
 
     # Filtrar por mês/ano
     data_inicio = date(ano, mes, 1)
@@ -65,6 +70,8 @@ async def listar_transacoes(
             "categorias": categorias,
             "conta_id": conta_id,
             "status_filtro": status,
+            "natureza_filtro": natureza,
+            "naturezas": [n.value for n in NaturezaCategoria],
             "mes": mes,
             "ano": ano,
             "hoje": hoje,
@@ -76,6 +83,7 @@ async def listar_transacoes(
 async def lista_transacoes_partial(
     request: Request,
     conta_id: int | None = None,
+    natureza: str | None = None,
     mes: int | None = None,
     ano: int | None = None,
     db: AsyncSession = Depends(get_db),
@@ -87,6 +95,10 @@ async def lista_transacoes_partial(
     query = select(Transacao).order_by(Transacao.data_vencimento.desc())
     if conta_id:
         query = query.where(Transacao.conta_id == conta_id)
+    if natureza:
+        query = query.join(Categoria, Transacao.categoria_id == Categoria.id).where(
+            Categoria.natureza == natureza
+        )
 
     data_inicio = date(ano, mes, 1)
     if mes == 12:

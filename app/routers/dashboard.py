@@ -2,11 +2,13 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models.conta import Conta
+from app.models.categoria import Categoria, NaturezaCategoria, TipoCategoria
 from app.models.transacao import Transacao, StatusTransacao
 from app.services.projecao import calcular_projecao
 
@@ -67,6 +69,25 @@ async def dashboard(
     # Dias negativos
     dias_negativos = [p for p in projecao if p["saldo"] < 0 and p["tipo"] == "projetado"]
 
+    # Somatório de despesas por natureza no período
+    despesas_natureza = {n.value: 0.0 for n in NaturezaCategoria}
+    stmt = (
+        select(Categoria.natureza, func.sum(Transacao.valor_previsto))
+        .join(Categoria, Transacao.categoria_id == Categoria.id)
+        .where(
+            and_(
+                Transacao.conta_id == conta_selecionada,
+                Categoria.tipo == TipoCategoria.DESPESA,
+                Transacao.data_vencimento >= dt_inicio,
+                Transacao.data_vencimento <= dt_fim,
+            )
+        )
+        .group_by(Categoria.natureza)
+    )
+    result_nat = await db.execute(stmt)
+    for natureza, total in result_nat.all():
+        despesas_natureza[natureza.value if hasattr(natureza, 'value') else natureza] = abs(float(total or 0))
+
     return templates.TemplateResponse(
         request, "dashboard.html",
         {
@@ -80,6 +101,7 @@ async def dashboard(
             "dias_futuro": dias_futuro,
             "data_inicio": dt_inicio.isoformat(),
             "data_fim": dt_fim.isoformat(),
+            "despesas_natureza": despesas_natureza,
         },
     )
 

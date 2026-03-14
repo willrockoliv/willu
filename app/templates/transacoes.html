@@ -38,7 +38,7 @@
             </div>
             <div class="flex flex-wrap gap-1">
                 {% for m in range(1, 13) %}
-                <a href="/transacoes/?mes={{ m }}&ano={{ ano }}{% if conta_id %}&conta_id={{ conta_id }}{% endif %}"
+                <a href="/transacoes/?mes={{ m }}&ano={{ ano }}{% if conta_id %}&conta_id={{ conta_id }}{% endif %}{% if natureza_filtro %}&natureza={{ natureza_filtro }}{% endif %}"
                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
                           {% if m == mes %}bg-primary-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
                     {{ ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][m] }}
@@ -50,16 +50,34 @@
         <div>
             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Conta</label>
             <div class="flex flex-wrap gap-1">
-                <a href="/transacoes/?mes={{ mes }}&ano={{ ano }}"
+                <a href="/transacoes/?mes={{ mes }}&ano={{ ano }}{% if natureza_filtro %}&natureza={{ natureza_filtro }}{% endif %}"
                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
                           {% if not conta_id %}bg-primary-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
                     Todas
                 </a>
                 {% for conta in contas %}
-                <a href="/transacoes/?mes={{ mes }}&ano={{ ano }}&conta_id={{ conta.id }}"
+                <a href="/transacoes/?mes={{ mes }}&ano={{ ano }}&conta_id={{ conta.id }}{% if natureza_filtro %}&natureza={{ natureza_filtro }}{% endif %}"
                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
                           {% if conta.id == conta_id %}bg-primary-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
                     {{ conta.nome }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Natureza -->
+        <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Natureza</label>
+            <div class="flex flex-wrap gap-1">
+                <a href="/transacoes/?mes={{ mes }}&ano={{ ano }}{% if conta_id %}&conta_id={{ conta_id }}{% endif %}"
+                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
+                          {% if not natureza_filtro %}bg-primary-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
+                    Todas
+                </a>
+                {% for nat in naturezas %}
+                <a href="/transacoes/?mes={{ mes }}&ano={{ ano }}{% if conta_id %}&conta_id={{ conta_id }}{% endif %}&natureza={{ nat }}"
+                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
+                          {% if natureza_filtro == nat %}bg-primary-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
+                    {{ nat }}
                 </a>
                 {% endfor %}
             </div>
@@ -69,7 +87,7 @@
     <!-- Lista de Transações -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700" id="transacoes-lista"
         hx-trigger="transacaoCriada from:body, transacaoAtualizada from:body, transacaoDeletada from:body"
-        hx-get="/transacoes/lista?mes={{ mes }}&ano={{ ano }}{% if conta_id %}&conta_id={{ conta_id }}{% endif %}"
+        hx-get="/transacoes/lista?mes={{ mes }}&ano={{ ano }}{% if conta_id %}&conta_id={{ conta_id }}{% endif %}{% if natureza_filtro %}&natureza={{ natureza_filtro }}{% endif %}"
         hx-swap="innerHTML"
     >
         {% include "partials/transacoes_lista.html" %}
