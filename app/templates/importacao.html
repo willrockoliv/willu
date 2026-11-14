@@ -11,7 +11,7 @@
     <!-- Upload -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
         <form
-            hx-post="/importacao/upload"
+            hx-post="{{ request.scope.root_path }}/importacao/upload"
             hx-target="#resultado-importacao"
             hx-swap="innerHTML"
             hx-encoding="multipart/form-data"

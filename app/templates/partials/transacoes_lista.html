@@ -54,7 +54,7 @@
                 <td class="py-3 px-4 text-center">
                     <div class="flex items-center justify-center gap-1">
                         <button
-                            hx-get="/transacoes/form/{{ t.id }}"
+                            hx-get="{{ request.scope.root_path }}/transacoes/form/{{ t.id }}"
                             hx-target="#modal-transacao-body"
                             onclick="document.getElementById('modal-transacao').classList.remove('hidden')"
                             class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -65,7 +65,7 @@
                             </svg>
                         </button>
                         <button
-                            hx-delete="/transacoes/{{ t.id }}"
+                            hx-delete="{{ request.scope.root_path }}/transacoes/{{ t.id }}"
                             hx-confirm="Tem certeza que deseja excluir esta transação?"
                             hx-target="closest tr"
                             hx-swap="outerHTML"

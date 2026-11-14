@@ -11,7 +11,7 @@
         {% set ano_prox = ano if mes < 12 else ano + 1 %}
 
         <button
-            hx-get="/api/calendario?conta_id={{ conta_id }}&ano={{ ano_ant }}&mes={{ mes_ant }}"
+            hx-get="{{ request.scope.root_path }}/api/calendario?conta_id={{ conta_id }}&ano={{ ano_ant }}&mes={{ mes_ant }}"
             hx-target="#calendario-container"
             class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
         >
@@ -21,7 +21,7 @@
         </button>
         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">{{ meses_nomes[mes] }} {{ ano }}</h3>
         <button
-            hx-get="/api/calendario?conta_id={{ conta_id }}&ano={{ ano_prox }}&mes={{ mes_prox }}"
+            hx-get="{{ request.scope.root_path }}/api/calendario?conta_id={{ conta_id }}&ano={{ ano_prox }}&mes={{ mes_prox }}"
             hx-target="#calendario-container"
             class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
         >

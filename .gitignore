@@ -24,6 +24,7 @@ venv/
 
 # Docker
 /tmp/dockerd.log
+docker-compose-prd.yml
 
 # OS
 .DS_Store

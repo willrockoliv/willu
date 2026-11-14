@@ -10,7 +10,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Projeção do seu fluxo de caixa</p>
         </div>
         {% if contas %}
-        <form id="dashboard-filters" action="/" method="get" class="flex items-center gap-3 flex-wrap">
+        <form id="dashboard-filters" action="{{ request.scope.root_path }}/" method="get" class="flex items-center gap-3 flex-wrap">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Conta:</label>
             <select
                 id="conta-select"
@@ -75,7 +75,7 @@
         </svg>
         <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white">Nenhuma conta cadastrada</h3>
         <p class="mt-2 text-gray-500 dark:text-gray-400">Comece cadastrando uma conta para ver sua projeção financeira.</p>
-        <a href="/contas/" class="mt-6 inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
+        <a href="{{ request.scope.root_path }}/contas/" class="mt-6 inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
             Cadastrar Conta
         </a>
     </div>
@@ -181,7 +181,7 @@
         </div>
         <!-- Vista Lista -->
         <div id="view-lista" class="hidden"
-            hx-get="/api/projecao-lista?conta_id={{ conta_selecionada }}&dias_futuro={{ dias_futuro }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}"
+            hx-get="{{ request.scope.root_path }}/api/projecao-lista?conta_id={{ conta_selecionada }}&dias_futuro={{ dias_futuro }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}"
             hx-trigger="projecao-lista-load"
             hx-swap="innerHTML"
         >
@@ -199,7 +199,7 @@
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Calendário Financeiro</h2>
         <div
             id="calendario-container"
-            hx-get="/api/calendario?conta_id={{ conta_selecionada }}&ano={{ hoje.year }}&mes={{ hoje.month }}"
+            hx-get="{{ request.scope.root_path }}/api/calendario?conta_id={{ conta_selecionada }}&ano={{ hoje.year }}&mes={{ hoje.month }}"
             hx-trigger="load"
             hx-swap="innerHTML"
         >

@@ -31,7 +31,7 @@
                 </td>
                 <td class="py-3 px-4 text-center">
                     <button
-                        hx-delete="/categorias/{{ cat.id }}"
+                        hx-delete="{{ request.scope.root_path }}/categorias/{{ cat.id }}"
                         hx-target="#categorias-lista"
                         hx-confirm="Excluir categoria '{{ cat.nome }}'?"
                         class="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-600 dark:hover:text-red-400"

@@ -1,9 +1,9 @@
 <!-- Formulário de Transação (Modal) -->
 <form
     {% if transacao %}
-        hx-put="/transacoes/{{ transacao.id }}"
+        hx-put="{{ request.scope.root_path }}/transacoes/{{ transacao.id }}"
     {% else %}
-        hx-post="/transacoes/"
+        hx-post="{{ request.scope.root_path }}/transacoes/"
     {% endif %}
     hx-target="#modal-transacao-body"
     hx-swap="innerHTML"

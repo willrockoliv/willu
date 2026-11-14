@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: willu_financas
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
@@ -24,8 +24,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/willu_financas
-      DATABASE_URL_SYNC: postgresql+psycopg2://postgres:postgres@db:5432/willu_financas
+      DATABASE_URL: "${DATABASE_URL}"
+      DATABASE_URL_SYNC: "${DATABASE_URL_SYNC}"
       APP_TITLE: "Willu - Finanças Pessoais"
       DEBUG: "true"
       UVICORN_ARGS: "--reload"

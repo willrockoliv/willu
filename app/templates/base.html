@@ -51,7 +51,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
-                        <a href="/" class="flex items-center gap-2">
+                        <a href="{{ request.scope.root_path }}/" class="flex items-center gap-2">
                             <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -60,19 +60,19 @@
                             <span class="text-xl font-bold text-gray-900 dark:text-white">Willu</span>
                         </a>
                         <div class="hidden sm:ml-8 sm:flex sm:space-x-1">
-                            <a href="/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.url.path == '/' %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                            <a href="{{ request.scope.root_path }}/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.url.path.rstrip('/') == request.scope.root_path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
                                 Dashboard
                             </a>
-                            <a href="/transacoes/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/transacoes' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                            <a href="{{ request.scope.root_path }}/transacoes/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/transacoes' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
                                 Transações
                             </a>
-                            <a href="/categorias/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/categorias' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                            <a href="{{ request.scope.root_path }}/categorias/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/categorias' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
                                 Categorias
                             </a>
-                            <a href="/contas/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/contas' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                            <a href="{{ request.scope.root_path }}/contas/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/contas' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
                                 Contas
                             </a>
-                            <a href="/importacao/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/importacao' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                            <a href="{{ request.scope.root_path }}/importacao/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/importacao' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
                                 Importar
                             </a>
                         </div>
@@ -103,7 +103,7 @@
     <!-- FAB (Floating Action Button) para Entrada Rápida -->
     <button
         onclick="document.getElementById('modal-transacao').classList.remove('hidden')"
-        hx-get="/transacoes/form"
+        hx-get="{{ request.scope.root_path }}/transacoes/form"
         hx-target="#modal-transacao-body"
         class="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-50"
         title="Nova Transação"
@@ -140,10 +140,11 @@
             localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
         }
 
+        const appRootPath = "{{ request.scope.root_path }}";
         document.body.addEventListener('transacaoCriada', function() {
             setTimeout(() => {
                 document.getElementById('modal-transacao').classList.add('hidden');
-                if (window.location.pathname === '/') {
+                if (window.location.pathname === appRootPath + '/') {
                     window.location.reload();
                 }
             }, 800);
@@ -151,7 +152,7 @@
         document.body.addEventListener('transacaoAtualizada', function() {
             setTimeout(() => {
                 document.getElementById('modal-transacao').classList.add('hidden');
-                if (window.location.pathname === '/') {
+                if (window.location.pathname === appRootPath + '/') {
                     window.location.reload();
                 }
             }, 800);
