@@ -12,17 +12,17 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
         <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">Nova Conta</h2>
         <form hx-post="{{ request.scope.root_path }}/contas/" hx-target="#contas-lista" hx-swap="innerHTML" class="flex flex-wrap items-end gap-3">
-            <div class="flex-1 min-w-[200px]">
+            <div class="w-full sm:flex-1 sm:min-w-[200px]">
                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nome</label>
                 <input type="text" name="nome" required placeholder="Ex: NuConta, Itaú, Carteira..."
                     class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
             </div>
-            <div class="w-40">
+            <div class="w-full sm:w-40">
                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Saldo Inicial (R$)</label>
                 <input type="number" name="saldo_inicial" step="0.01" value="0" placeholder="0,00"
                     class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm">
             </div>
-            <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">
                 Adicionar
             </button>
         </form>

@@ -1,8 +1,8 @@
 <!-- Lista de Sugestões de Conciliação -->
 {% if sugestoes %}
 <div class="space-y-3">
-    <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">
             {{ sugestoes | length }} transações encontradas
         </h3>
         <button
@@ -35,16 +35,16 @@
                     data-transacao-id="{{ s.transacao_id or '' }}"
                     data-conta-id="{{ conta_id }}"
                 >
-                    <td class="py-3 px-3 text-gray-600 dark:text-gray-300">
+                    <td class="py-3 px-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                         {{ s.linha_extrato.data.strftime('%d/%m/%Y') if s.linha_extrato.data is not string else s.linha_extrato.data }}
                     </td>
                     <td class="py-3 px-3">
                         <div class="text-xs text-gray-400 mb-1 max-w-xs truncate" title="{{ s.linha_extrato.descricao }}">{{ s.linha_extrato.descricao }}</div>
-                        <input type="text" class="descricao-input rounded border-gray-300 text-sm py-1 px-2 w-full"
+                        <input type="text" class="descricao-input rounded border-gray-300 text-sm py-1 px-2 w-full min-w-[10rem]"
                             value="{{ s.transacao_descricao or s.linha_extrato.descricao }}"
                             data-row-idx="{{ loop.index0 }}">
                     </td>
-                    <td class="py-3 px-3 text-right font-medium
+                    <td class="py-3 px-3 text-right font-medium whitespace-nowrap
                         {% if s.linha_extrato.valor >= 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %}">
                         R$ {{ "%.2f" | format(s.linha_extrato.valor | abs) }}
                     </td>

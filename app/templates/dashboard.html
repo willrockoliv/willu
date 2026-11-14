@@ -10,12 +10,13 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Projeção do seu fluxo de caixa</p>
         </div>
         {% if contas %}
-        <form id="dashboard-filters" action="{{ request.scope.root_path }}/" method="get" class="flex items-center gap-3 flex-wrap">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Conta:</label>
+        <form id="dashboard-filters" action="{{ request.scope.root_path }}/" method="get" class="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3 sm:flex-wrap">
+            <div class="col-span-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+            <label class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Conta:</label>
             <select
                 id="conta-select"
                 name="conta_id"
-                class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                class="w-full sm:w-auto rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
                 onchange="this.form.submit()"
             >
                 {% for conta in contas %}
@@ -24,25 +25,31 @@
                 </option>
                 {% endfor %}
             </select>
+            </div>
 
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 ml-2">De:</label>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
+            <label class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">De:</label>
             <input type="date" name="data_inicio" id="data-inicio"
                 value="{{ data_inicio }}"
-                class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                class="w-full sm:w-auto min-w-0 rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
                 onchange="this.form.submit()"
             >
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Até:</label>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
+            <label class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Até:</label>
             <input type="date" name="data_fim" id="data-fim"
                 value="{{ data_fim }}"
-                class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                class="w-full sm:w-auto min-w-0 rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
                 onchange="this.form.submit()"
             >
+            </div>
 
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 ml-2">Projetar:</label>
+            <div class="col-span-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+            <label class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Projetar:</label>
             <select
                 id="dias-select"
                 name="dias_futuro"
-                class="rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                class="w-full sm:w-auto rounded-lg border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
                 onchange="aplicarProjecaoDias(this.value)"
             >
                 <option value="30" {% if dias_futuro == 30 %}selected{% endif %}>30 dias</option>
@@ -51,6 +58,7 @@
                 <option value="180" {% if dias_futuro == 180 %}selected{% endif %}>180 dias</option>
                 <option value="365" {% if dias_futuro == 365 %}selected{% endif %}>1 ano</option>
             </select>
+            </div>
         </form>
         <script>
         function aplicarProjecaoDias(dias) {
@@ -149,8 +157,8 @@
     </div>
 
     <!-- Projeção de Saldo -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-        <div class="flex items-center justify-between mb-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Projeção de Saldo</h2>
             <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 p-0.5 bg-gray-100 dark:bg-gray-700">
                 <button
@@ -176,7 +184,7 @@
             </div>
         </div>
         <!-- Vista Gráfico -->
-        <div id="view-grafico" class="h-80">
+        <div id="view-grafico" class="h-64 sm:h-80">
             <canvas id="grafico-projecao"></canvas>
         </div>
         <!-- Vista Lista -->
@@ -195,7 +203,7 @@
     </div>
 
     <!-- Calendário Financeiro -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-6">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Calendário Financeiro</h2>
         <div
             id="calendario-container"
@@ -277,6 +285,7 @@ function initProjecaoChart() {
     }
 
     const ctx = canvas.getContext('2d');
+    const isMobile = window.innerWidth < 640;
     window.__willuProjecaoChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -314,7 +323,7 @@ function initProjecaoChart() {
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: true, position: 'top' },
+                legend: { display: true, position: 'top', labels: { boxWidth: isMobile ? 12 : 40, font: { size: isMobile ? 11 : 12 } } },
                 tooltip: {
                     callbacks: {
                         label: function(ctx) {
@@ -341,12 +350,16 @@ function initProjecaoChart() {
                     type: 'time',
                     time: { unit: 'day', tooltipFormat: 'dd/MM/yyyy', displayFormats: { day: 'dd/MM' } },
                     grid: { display: false },
-                    ticks: { maxTicksLimit: 15 }
+                    ticks: { maxTicksLimit: isMobile ? 6 : 15, font: { size: isMobile ? 10 : 12 } }
                 },
                 y: {
                     grid: { color: 'rgba(0,0,0,0.05)' },
                     ticks: {
+                        font: { size: isMobile ? 10 : 12 },
                         callback: function(val) {
+                            if (isMobile && Math.abs(val) >= 1000) {
+                                return 'R$ ' + (val / 1000).toLocaleString('pt-BR', {maximumFractionDigits: 1}) + 'k';
+                            }
                             return 'R$ ' + val.toLocaleString('pt-BR', {minimumFractionDigits: 0});
                         }
                     }

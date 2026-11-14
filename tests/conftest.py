@@ -3,6 +3,8 @@ Fixtures compartilhadas para testes.
 Configura banco SQLite in-memory para testes de integração HTTP.
 """
 
+import asyncio
+
 import pytest
 import pytest_asyncio
 from contextlib import asynccontextmanager
@@ -28,6 +30,13 @@ engine_test = create_async_engine(
 async_session_test = async_sessionmaker(
     engine_test, class_=AsyncSession, expire_on_commit=False
 )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _dispose_engine_test():
+    """Fecha a conexão aiosqlite (thread não-daemon) para o pytest não travar ao encerrar."""
+    yield
+    asyncio.run(engine_test.dispose())
 
 
 async def override_get_db():

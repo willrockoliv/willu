@@ -9,7 +9,7 @@
     </div>
 
     <!-- Upload -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6">
         <form
             hx-post="{{ request.scope.root_path }}/importacao/upload"
             hx-target="#resultado-importacao"
@@ -19,21 +19,21 @@
             class="space-y-4"
         >
             <div class="flex flex-wrap items-end gap-4">
-                <div>
+                <div class="w-full sm:w-auto">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Conta</label>
-                    <select name="conta_id" required class="rounded-lg border-gray-300 text-sm">
+                    <select name="conta_id" required class="w-full sm:w-auto rounded-lg border-gray-300 text-sm">
                         {% for conta in contas %}
                         <option value="{{ conta.id }}">{{ conta.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="flex-1">
+                <div class="w-full sm:flex-1 sm:w-auto">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arquivo (.ofx ou .csv)</label>
                     <input type="file" name="arquivo" accept=".ofx,.csv" required
                         class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900/40 dark:file:text-primary-300">
                 </div>
                 <button type="submit"
-                    class="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    class="w-full sm:w-auto px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">
                     📤 Importar
                 </button>
             </div>

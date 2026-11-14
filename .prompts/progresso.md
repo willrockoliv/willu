@@ -505,3 +505,20 @@ FastAPI 0.115, SQLAlchemy 2.0.35, asyncpg 0.29, Pydantic 2.9.2, pydantic-setting
 | `app/templates/partials/calendario.html` | Dark mode no grid do calendário |
 | `app/templates/partials/conciliacao_lista.html` | Dark mode na tabela de conciliação |
 | `.prompts/progresso.md` | Atualizado com changelog |
+
+## 15. Changelog — Sessão 2026-11-14 (Responsividade Mobile)
+
+### O que foi feito
+
+- **Navbar mobile**: menu hambúrguer (`sm:hidden`); links gerados de uma única lista `nav_items` (desktop + mobile).
+- **Modal**: bottom-sheet no mobile (`items-end`, `rounded-t-2xl`), padding reduzido.
+- **FAB** e `main` com espaçamentos menores; `pb-24` no mobile para o FAB não cobrir conteúdo.
+- **iOS**: inputs/selects com `font-size: 16px` abaixo de 640px (evita zoom automático).
+- **Dashboard**: filtros em grid 2 colunas no mobile; gráfico `h-64` com menos ticks, fonte menor e eixo Y abreviado (`R$ 1,5k`).
+- **Calendário**: células menores, saldo diário oculto no mobile (só movimentação), legenda com wrap.
+- **Tabelas**: colunas Categoria/Status (transações), Tipo/Detalhes (projeção) ocultas no mobile, com info resumida dentro da célula principal; datas curtas (`dd/mm`).
+- **Formulários** (categorias, contas, importação): campos e botões `w-full` no mobile.
+- **Conciliação**: header com wrap, `whitespace-nowrap` em data/valor, input com largura mínima (tabela rola horizontalmente).
+
+### Testes
+- **168 passed, 0 failed**

@@ -1,5 +1,4 @@
-from pydantic_settings import BaseSettings
-from pydantic import ConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
@@ -9,7 +8,8 @@ class Settings(BaseSettings):
     APP_TITLE: str = "Willu - Finanças Pessoais"
     DEBUG: bool = True
 
-    model_config = ConfigDict(env_file=".env")
+    # .env também contém variáveis do docker-compose (DB_USER etc.)
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 @lru_cache()

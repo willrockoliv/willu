@@ -29,6 +29,10 @@
         }
         .dark select option { background-color: rgb(55 65 81); color: rgb(243 244 246); }
         .dark input::placeholder { color: rgb(156 163 175); }
+        /* Evita zoom automático do iOS ao focar inputs com fonte < 16px */
+        @media (max-width: 639px) {
+            input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]), select, textarea { font-size: 16px !important; }
+        }
     </style>
     <script>
         tailwind.config = {
@@ -45,6 +49,14 @@
     </script>
 </head>
 <body class="h-full bg-gray-50 dark:bg-gray-900 transition-colors" hx-boost="true">
+    {% set root = request.scope.root_path %}
+    {% set nav_items = [
+        (root ~ '/', 'Dashboard', request.url.path.rstrip('/') == root, 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'),
+        (root ~ '/transacoes/', 'Transações', '/transacoes' in request.url.path, 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'),
+        (root ~ '/categorias/', 'Categorias', '/categorias' in request.url.path, 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'),
+        (root ~ '/contas/', 'Contas', '/contas' in request.url.path, 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'),
+        (root ~ '/importacao/', 'Importar', '/importacao' in request.url.path, 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12'),
+    ] %}
     <div class="min-h-full">
         <!-- Navbar -->
         <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -60,21 +72,11 @@
                             <span class="text-xl font-bold text-gray-900 dark:text-white">Willu</span>
                         </a>
                         <div class="hidden sm:ml-8 sm:flex sm:space-x-1">
-                            <a href="{{ request.scope.root_path }}/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.url.path.rstrip('/') == request.scope.root_path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
-                                Dashboard
+                            {% for href, label, ativo, _icon in nav_items %}
+                            <a href="{{ href }}" class="px-3 py-2 rounded-md text-sm font-medium {% if ativo %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                                {{ label }}
                             </a>
-                            <a href="{{ request.scope.root_path }}/transacoes/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/transacoes' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
-                                Transações
-                            </a>
-                            <a href="{{ request.scope.root_path }}/categorias/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/categorias' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
-                                Categorias
-                            </a>
-                            <a href="{{ request.scope.root_path }}/contas/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/contas' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
-                                Contas
-                            </a>
-                            <a href="{{ request.scope.root_path }}/importacao/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/importacao' in request.url.path %}bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300{% else %}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
-                                Importar
-                            </a>
+                            {% endfor %}
                         </div>
                     </div>
                     <!-- Dark mode toggle -->
@@ -94,8 +96,22 @@
             </div>
         </nav>
 
+        <!-- Navegação inferior (mobile) -->
+        <nav class="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-[0_-1px_3px_rgba(0,0,0,0.05)]" style="padding-bottom: env(safe-area-inset-bottom);">
+            <div class="grid grid-cols-5">
+                {% for href, label, ativo, icon in nav_items %}
+                <a href="{{ href }}" class="flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium {% if ativo %}text-primary-600 dark:text-primary-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon }}"/>
+                    </svg>
+                    {{ label }}
+                </a>
+                {% endfor %}
+            </div>
+        </nav>
+
         <!-- Main content -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 pb-40 sm:py-8">
             {% block content %}{% endblock %}
         </main>
     </div>
@@ -105,7 +121,7 @@
         onclick="document.getElementById('modal-transacao').classList.remove('hidden')"
         hx-get="{{ request.scope.root_path }}/transacoes/form"
         hx-target="#modal-transacao-body"
-        class="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-50"
+        class="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-50"
         title="Nova Transação"
     >
         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,9 +131,9 @@
 
     <!-- Modal de Transação -->
     <div id="modal-transacao" class="hidden fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="flex items-end sm:items-center justify-center min-h-screen sm:px-4">
             <div class="fixed inset-0 bg-black bg-opacity-40 transition-opacity" onclick="document.getElementById('modal-transacao').classList.add('hidden')"></div>
-            <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full p-6 z-10">
+            <div class="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-xl shadow-2xl max-w-lg w-full p-4 sm:p-6 z-10">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Nova Transação</h3>
                     <button onclick="document.getElementById('modal-transacao').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
